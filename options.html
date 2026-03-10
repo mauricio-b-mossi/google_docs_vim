@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vim for Google Docs - Options</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 400px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #status {
+      margin-top: 10px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Vim for Google Docs Settings</h1>
+  
+  <div class="form-group">
+    <label for="key-left">Move Left</label>
+    <input type="text" id="key-left" value="h" maxlength="1">
+  </div>
+  
+  <div class="form-group">
+    <label for="key-down">Move Down</label>
+    <input type="text" id="key-down" value="j" maxlength="1">
+  </div>
+  
+  <div class="form-group">
+    <label for="key-up">Move Up</label>
+    <input type="text" id="key-up" value="k" maxlength="1">
+  </div>
+  
+  <div class="form-group">
+    <label for="key-right">Move Right</label>
+    <input type="text" id="key-right" value="l" maxlength="1">
+  </div>
+
+  <button id="save-btn">Save Options</button>
+  <div id="status"></div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>

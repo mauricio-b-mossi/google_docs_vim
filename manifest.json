@@ -1,0 +1,32 @@
+{
+    "manifest_version": 3,
+    "name": "Vim for Google Docs",
+    "description": "Customizable Vim keybindings for Google Docs.",
+    "version": "1.0.0",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "clipboardRead",
+        "clipboardWrite"
+    ],
+    "content_scripts": [
+        {
+            "js": [
+                "src/content.js"
+            ],
+            "matches": [
+                "https://docs.google.com/*"
+            ],
+            "all_frames": true,
+            "match_about_blank": true,
+            "match_origin_as_fallback": true
+        }
+    ],
+    "action": {
+        "default_popup": "index.html"
+    },
+    "options_ui": {
+        "page": "options.html",
+        "open_in_tab": true
+    }
+}
