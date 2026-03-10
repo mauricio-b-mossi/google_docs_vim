@@ -12,8 +12,7 @@ const isTopWindow = window === window.top;
 const MODES = {
     NORMAL: 'NORMAL',
     INSERT: 'INSERT',
-    VISUAL: 'VISUAL',
-    SEARCH: 'SEARCH',
+    VISUAL: 'VISUAL'
 };
 
 let currentMode = MODES.NORMAL;
@@ -29,8 +28,7 @@ let keybindings = {
 let customEscape = 'Escape'; // Additional key that acts as Escape (Escape is always reserved)
 
 // --- SEARCH STATE ---
-let searchDirection = 'forward'; // 'forward' | 'backward'
-let searchQuery = '';
+// (Search is now delegated to native Google Docs Ctrl+F / Ctrl+G)
 
 // --- UI ---
 let modeIndicator = null;
@@ -82,24 +80,18 @@ function updateModeIndicator() {
 
     if (modeIndicator.dataset.tempMsg) return;
 
-    let text;
+    let text = `-- ${currentMode} --`;
 
-    if (currentMode === MODES.SEARCH) {
-        const prompt = searchDirection === 'forward' ? '/' : '?';
-        text = `${prompt}${searchQuery}`;
-        modeIndicator.style.backgroundColor = '#8e44ad';
+    if (currentMode === MODES.NORMAL && commandSequence) {
+        text += ` ${commandSequence}`;
+    }
+
+    if (currentMode === MODES.INSERT) {
+        modeIndicator.style.backgroundColor = '#2ecc71';
+    } else if (currentMode === MODES.VISUAL) {
+        modeIndicator.style.backgroundColor = '#e67e22';
     } else {
-        text = `-- ${currentMode} --`;
-        if (currentMode === MODES.NORMAL && commandSequence) {
-            text += ` ${commandSequence}`;
-        }
-        if (currentMode === MODES.INSERT) {
-            modeIndicator.style.backgroundColor = '#2ecc71';
-        } else if (currentMode === MODES.VISUAL) {
-            modeIndicator.style.backgroundColor = '#e67e22';
-        } else {
-            modeIndicator.style.backgroundColor = '#333';
-        }
+        modeIndicator.style.backgroundColor = '#333';
     }
 
     modeIndicator.innerText = text;
@@ -140,46 +132,105 @@ function setMode(mode) {
     console.log(`[VimDocs] Switched to ${mode} mode`);
 }
 
-// ============================================================
-// SEARCH MODE
-// ============================================================
-
-function handleSearchModeEvent(e) {
-    if (!isEnabled) return;
-
-    const key = e.key;
-
-    if (isEscapeKey(key)) {
-        // We intercept Escape: update our mode, then dispatch a synthetic Escape
-        // to close the Docs find bar (which also lands the cursor on the match).
-        e.preventDefault();
-        e.stopPropagation();
-        searchQuery = '';
-        setMode(MODES.NORMAL);
-        setTimeout(() => window.emulator.dispatchKey('Escape', { code: 'Escape', keyCode: 27 }), 30);
-        return;
-    }
-
-    if (key === 'Enter') {
-        // Do NOT preventDefault/stopPropagation — the real Enter must reach the
-        // Docs find bar so it confirms and advances to the match.
-        // After Docs processes it, we dispatch synthetic Escape to close the bar;
-        // Docs will then place the text cursor on the highlighted match.
-        setMode(MODES.NORMAL);
-        setTimeout(() => window.emulator.dispatchKey('Escape', { code: 'Escape', keyCode: 27 }), 50);
-        return;
-    }
-
-    // Mirror the query in our indicator. Do NOT preventDefault so characters
-    // flow through to the Docs find input.
-    if (key === 'Backspace') {
-        searchQuery = searchQuery.slice(0, -1);
-    } else if (key.length === 1) {
-        searchQuery += key;
-    }
-
+function handleOperatorSequence(key) {
+    commandSequence += key;
     updateModeIndicator();
+
+    let motionMatched = true;
+
+    switch (key) {
+        case 'w':
+        case 'e':
+            window.emulator.selectWord();
+            break;
+        case 'b':
+            window.emulator.moveWordBackward();
+            window.emulator.selectWord();
+            break;
+        case '$':
+            window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
+            break;
+        case '0':
+        case '^':
+            window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, shiftKey: true });
+            break;
+        case 'G':
+            window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, ctrlKey: true, shiftKey: true });
+            break;
+        default:
+            motionMatched = false;
+    }
+
+    if (motionMatched) {
+        if (pendingOperator === 'y') {
+            window.emulator.copy();
+            window.emulator.moveRight();
+            window.emulator.moveLeft();
+        } else {
+            window.emulator.deleteSelected();
+        }
+        if (pendingOperator === 'c') setMode(MODES.INSERT);
+        else setMode(MODES.NORMAL);
+        return;
+    }
+
+    // --- Inner-word text object: ciw / diw / yiw ---
+    if (key === 'i' && commandSequence.length === 2) {
+        return; // wait for object character ('w')
+    }
+    if (commandSequence.endsWith('iw')) {
+        window.emulator.selectWord();
+        if (pendingOperator === 'y') {
+            window.emulator.copy();
+            window.emulator.moveRight();
+            window.emulator.moveLeft();
+        } else {
+            window.emulator.deleteSelected();
+        }
+        if (pendingOperator === 'c') setMode(MODES.INSERT);
+        else setMode(MODES.NORMAL);
+        return;
+    }
+
+    // Double operator (dd, cc, yy)
+    if (key === pendingOperator) {
+        window.emulator.selectLine();
+        if (pendingOperator === 'y') {
+            showTemporaryMessage('USE CTRL+C TO COPY');
+        } else {
+            window.emulator.deleteSelected();
+        }
+        if (pendingOperator === 'c') setMode(MODES.INSERT);
+        else setMode(MODES.NORMAL);
+        return;
+    }
+
+    // dgg / cgg / ygg — to document start
+    if (key === 'g' && commandSequence === pendingOperator + 'g') {
+        return; // wait for second 'g'
+    }
+    if (key === 'g' && commandSequence === pendingOperator + 'gg') {
+        window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, ctrlKey: true, shiftKey: true });
+        if (pendingOperator === 'y') {
+            showTemporaryMessage('USE CTRL+C TO COPY');
+        } else {
+            window.emulator.deleteSelected();
+        }
+        if (pendingOperator === 'c') setMode(MODES.INSERT);
+        else setMode(MODES.NORMAL);
+        return;
+    }
+
+    if (key === 'Esc' || key === 'Escape') {
+        setMode(MODES.NORMAL);
+        return;
+    }
+
+    // Unrecognised sequence — abort
+    setMode(MODES.NORMAL);
 }
+
+// (SEARCH MODE REMOVED - DELEGATED TO NATIVE GOOGLE DOCS)
 
 // ============================================================
 // NORMAL MODE
@@ -191,8 +242,8 @@ function handleNormalModeEvent(e) {
 
     const lowerKey = e.key.toLowerCase();
 
-    // Pass-through native copy/paste/cut/select-all/undo
-    if ((e.ctrlKey || e.metaKey) && (lowerKey === 'c' || lowerKey === 'v' || lowerKey === 'x' || lowerKey === 'a' || lowerKey === 'z')) {
+    // Pass-through native copy/paste/cut/select-all/undo/find/next/replace
+    if ((e.ctrlKey || e.metaKey) && (lowerKey === 'c' || lowerKey === 'v' || lowerKey === 'x' || lowerKey === 'a' || lowerKey === 'z' || lowerKey === 'f' || lowerKey === 'g' || lowerKey === 'h')) {
         return;
     }
 
@@ -210,101 +261,7 @@ function handleNormalModeEvent(e) {
 
     // Handle pending operators (c, d, y)
     if (pendingOperator) {
-        commandSequence += key;
-        updateModeIndicator();
-
-        let motionMatched = true;
-
-        switch (key) {
-            case 'w':
-            case 'e':
-                window.emulator.selectWord();
-                break;
-            case 'b':
-                window.emulator.moveWordBackward();
-                window.emulator.selectWord();
-                break;
-            case '$':
-                window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
-                break;
-            case '0':
-            case '^':
-                window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, shiftKey: true });
-                break;
-            case 'G':
-                window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, ctrlKey: true, shiftKey: true });
-                break;
-            default:
-                motionMatched = false;
-        }
-
-        if (motionMatched) {
-            if (pendingOperator === 'y') {
-                window.emulator.copy();
-                window.emulator.moveRight();
-                window.emulator.moveLeft();
-            } else {
-                window.emulator.deleteSelected();
-            }
-            if (pendingOperator === 'c') setMode(MODES.INSERT);
-            else setMode(MODES.NORMAL);
-            return;
-        }
-
-        // --- Inner-word text object: ciw / diw / yiw ---
-        if (key === 'i' && commandSequence.length === 2) {
-            return; // wait for object character ('w')
-        }
-        if (commandSequence.endsWith('iw')) {
-            window.emulator.selectWord();
-            if (pendingOperator === 'y') {
-                window.emulator.copy();
-                window.emulator.moveRight();
-                window.emulator.moveLeft();
-            } else {
-                window.emulator.deleteSelected();
-            }
-            if (pendingOperator === 'c') setMode(MODES.INSERT);
-            else setMode(MODES.NORMAL);
-            return;
-        }
-
-        // Double operator (dd, cc, yy)
-        if (key === pendingOperator) {
-            window.emulator.selectLine();
-            if (pendingOperator === 'y') {
-                showTemporaryMessage('USE CTRL+C TO COPY');
-            } else {
-                window.emulator.deleteSelected();
-            }
-            if (pendingOperator === 'c') setMode(MODES.INSERT);
-            else setMode(MODES.NORMAL);
-            return;
-        }
-
-        // dgg / cgg / ygg — to document start
-        if (key === 'g' && commandSequence === pendingOperator + 'g') {
-            return; // wait for second 'g'
-        }
-        if (key === 'g' && commandSequence === pendingOperator + 'gg') {
-            window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, ctrlKey: true, shiftKey: true });
-            if (pendingOperator === 'y') {
-                showTemporaryMessage('USE CTRL+C TO COPY');
-            } else {
-                window.emulator.deleteSelected();
-            }
-            if (pendingOperator === 'c') setMode(MODES.INSERT);
-            else setMode(MODES.NORMAL);
-            return;
-        }
-
-        if (key === 'Esc' || key === 'Escape') {
-            setMode(MODES.NORMAL);
-            return;
-        }
-
-        // Unrecognised sequence — abort
-        setMode(MODES.NORMAL);
+        handleOperatorSequence(key);
         return;
     }
 
@@ -328,19 +285,13 @@ function handleNormalModeEvent(e) {
         return;
     }
 
-    // Search entry
-    if (key === '/') {
-        searchDirection = 'forward';
-        searchQuery = '';
-        window.emulator.openFindBar();
-        setMode(MODES.SEARCH);
+    // --- Search (Delegated to Native Docs) ---
+    if (key === '/' || key === '?') {
+        showTemporaryMessage('USE CTRL+F TO SEARCH');
         return;
     }
-    if (key === '?') {
-        searchDirection = 'backward';
-        searchQuery = '';
-        window.emulator.openFindBar();
-        setMode(MODES.SEARCH);
+    if (key === 'n' || key === 'N') {
+        showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
         return;
     }
 
@@ -394,16 +345,6 @@ function handleNormalModeEvent(e) {
         case 'G': window.emulator.moveDocumentEnd(); break;
         case '}': window.emulator.movePageDown(); break;
         case '{': window.emulator.movePageUp(); break;
-
-        // Search navigation (n/N)
-        case 'n':
-            if (searchDirection === 'forward') window.emulator.findNext();
-            else window.emulator.findPrev();
-            break;
-        case 'N':
-            if (searchDirection === 'forward') window.emulator.findPrev();
-            else window.emulator.findNext();
-            break;
 
         // Undo
         case 'u': window.emulator.undo(); break;
@@ -505,7 +446,6 @@ function onKeyDown(e) {
     if (currentMode === MODES.NORMAL) handleNormalModeEvent(e);
     else if (currentMode === MODES.INSERT) handleInsertModeEvent(e);
     else if (currentMode === MODES.VISUAL) handleVisualModeEvent(e);
-    else if (currentMode === MODES.SEARCH) handleSearchModeEvent(e);
 }
 
 // ============================================================
@@ -529,7 +469,15 @@ function loadSettings(callback) {
 
         chrome.storage.onChanged.addListener((changes, namespace) => {
             if (namespace === 'sync') {
-                if (changes.enabled) isEnabled = changes.enabled.newValue;
+                if (changes.enabled) {
+                    isEnabled = changes.enabled.newValue;
+                    setMode(MODES.NORMAL);
+                    if (isEnabled) {
+                        showTemporaryMessage('VIM ENABLED');
+                    } else {
+                        showTemporaryMessage('VIM DISABLED');
+                    }
+                }
                 if (changes.keybindings) keybindings = changes.keybindings.newValue;
                 if (changes.customEscape) customEscape = changes.customEscape.newValue;
                 console.log('[VimDocs] Settings updated via options', { isEnabled, keybindings, customEscape });
