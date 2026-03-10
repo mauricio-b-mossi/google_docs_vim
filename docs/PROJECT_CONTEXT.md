@@ -12,8 +12,9 @@
   - Line: `0`, `^`, `$`
   - Document: `gg`, `G`
   - Paragraph/Page: `{`, `}`
-- **Operators**: Supporting `d` (delete), `c` (change), and `y` (yank) with motions.
-  - **Yank Note**: `y` commands perform the **selection** and prompt for manual copy.
+- **Operators**: Supporting `d` (delete) and `c` (change) with motions.
+  - **Yank**: Pressing `y` is a short-circuit command that only displays a guidance toast.
+
 
 - **Text Objects**: `iw` (inner word) correctly targets current word.
 - **Real-Time Synergy**: Auto-saving options with instant propagation to all tabs.
@@ -22,7 +23,7 @@
 
 1. **Clipboard (`y`, `p`)**:
    - *Blocker*: Programmatic clipboard access is restricted within cross-origin iframes.
-   - *Solution*: Intercept Vim yanking keys, perform the corresponding **selection**, and display a notification guiding users to press **`Ctrl+C`**. `Ctrl+C` and `Ctrl+V` are passed through transparently.
+   - *Solution*: Intercept Vim yanking keys and display a notification guiding users to press **`Ctrl+C`**. No automated selection or Vim-style yanking is implemented to maintain a clean UX boundary. `Ctrl+C` and `Ctrl+V` are passed through transparently.
 
 2. **Search (`/`, `?`, `n`, `N`)**:
    - *Blocker*: Google Docs find/replace bar exists in a separate iframe, making programmatic interaction unreliable.

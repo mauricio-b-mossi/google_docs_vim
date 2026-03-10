@@ -38,6 +38,10 @@ This file acts as a chronological changelog of major milestones and decisions. F
 - **Refactoring**: Extracted `handleOperatorSequence` in `content.js` for better readability and removed duplicate `case 'u'` logic.
 - **Build Verification**: Verified all changes with clean production builds (`npm run build`).
 
+## v1.1.5 (Yank Short-Circuit Pivot)
+- **Strict Yank Logic**: Pressing `y` in any mode now immediately displays a guidance toast. Waiting for motions or performing automated "bootstrapped" selections has been removed.
+- **Documentation Alignment**: Re-scrubbed all documentation to remove yanking examples and reinforce the boundary between extension logic and native system shortcuts.
+
 ## v1.1.4 (Real-Time Synergy)
 - **Auto-Save Refactor**: Eliminated the manual "Save" button in settings. All settings (toggle, keys, size) now persist instantly on interaction.
 - **Visual Feedback**: Added a "SAVED" indicator in the options dashboard.

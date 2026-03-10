@@ -35,9 +35,10 @@
 
 ### Operators (`d`, `c`, `y`)
 Combine these with motions for powerful editing.
-- **Examples**: `dw` (delete word), `cc` (change line), `yG` (select to end + prompt copy).
+- **Examples**: `dw` (delete word), `cc` (change line).
 - **Text Objects**: Supports `iw` (inner word), e.g., `ciw`.
-- **Yanking Strategy**: `y` commands (e.g., `yy`, `yw`, `yG`) automatically **select** the target text and display a guidance toast prompting you to press **`Ctrl+C`**. This is necessary due to browser security restrictions on clipboard access.
+- **Yanking/Copying**: Pressing `y` immediately shows a guidance toast prompting you to use **`Ctrl+C`**. The extension does **not** handle yanking or automated selection to ensure a clear boundary between extension logic and native system shortcuts.
+
 
 
 ---

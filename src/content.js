@@ -175,20 +175,9 @@ function handleOperatorSequence(key) {
     }
 
     if (motionMatched) {
-        if (pendingOperator === 'y') {
-            showTemporaryMessage('USE CTRL+C TO COPY');
-        } else {
-            window.emulator.deleteSelected();
-        }
-
-        if (pendingOperator === 'y') {
-            // Keep selection for manual Ctrl+C, just clear sequence state
-            setMode(MODES.NORMAL);
-        } else if (pendingOperator === 'c') {
-            setMode(MODES.INSERT);
-        } else {
-            setMode(MODES.NORMAL);
-        }
+        window.emulator.deleteSelected();
+        if (pendingOperator === 'c') setMode(MODES.INSERT);
+        else setMode(MODES.NORMAL);
         return;
     }
 
@@ -198,25 +187,16 @@ function handleOperatorSequence(key) {
     }
     if (commandSequence.endsWith('iw')) {
         window.emulator.selectWord();
-        if (pendingOperator === 'y') {
-            showTemporaryMessage('USE CTRL+C TO COPY');
-            setMode(MODES.NORMAL);
-        } else {
-            window.emulator.deleteSelected();
-            if (pendingOperator === 'c') setMode(MODES.INSERT);
-            else setMode(MODES.NORMAL);
-        }
+        window.emulator.deleteSelected();
+        if (pendingOperator === 'c') setMode(MODES.INSERT);
+        else setMode(MODES.NORMAL);
         return;
     }
 
-    // Double operator (dd, cc, yy)
+    // Double operator (dd, cc)
     if (key === pendingOperator) {
         window.emulator.selectLine();
-        if (pendingOperator === 'y') {
-            showTemporaryMessage('USE CTRL+C TO COPY');
-        } else {
-            window.emulator.deleteSelected();
-        }
+        window.emulator.deleteSelected();
         if (pendingOperator === 'c') setMode(MODES.INSERT);
         else setMode(MODES.NORMAL);
         return;
@@ -228,14 +208,9 @@ function handleOperatorSequence(key) {
     }
     if (key === 'g' && commandSequence === pendingOperator + 'gg') {
         window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, ctrlKey: true, shiftKey: true });
-        if (pendingOperator === 'y') {
-            showTemporaryMessage('USE CTRL+C TO COPY');
-            setMode(MODES.NORMAL);
-        } else {
-            window.emulator.deleteSelected();
-            if (pendingOperator === 'c') setMode(MODES.INSERT);
-            else setMode(MODES.NORMAL);
-        }
+        window.emulator.deleteSelected();
+        if (pendingOperator === 'c') setMode(MODES.INSERT);
+        else setMode(MODES.NORMAL);
         return;
     }
 
@@ -277,17 +252,23 @@ function handleNormalModeEvent(e) {
     const key = e.key;
     console.log(`[VimDocs] Normal mode key: ${key}`);
 
-    // Handle pending operators (c, d, y)
+    // Handle pending operators (c, d)
     if (pendingOperator) {
         handleOperatorSequence(key);
         return;
     }
 
-    // Start operator sequence
-    if (key === 'c' || key === 'd' || key === 'y') {
+    // Start operator sequence (c, d)
+    if (key === 'c' || key === 'd') {
         pendingOperator = key;
         commandSequence = key;
         updateModeIndicator();
+        return;
+    }
+
+    // Yank (Short-circuit)
+    if (key === 'y') {
+        showTemporaryMessage('USE CTRL+C TO COPY');
         return;
     }
 
