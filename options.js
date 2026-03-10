@@ -83,6 +83,19 @@ function captureKey(e) {
 
     document.removeEventListener('keydown', captureKey, { capture: true });
     listeningButton = null;
+
+    // Auto-save on key capture
+    saveOptions();
+}
+
+function notifySaved() {
+    const status = document.getElementById('save-status');
+    if (!status) return;
+    status.innerText = 'Saved';
+    status.classList.add('visible');
+    setTimeout(() => {
+        status.classList.remove('visible');
+    }, 1500);
 }
 
 function saveOptions() {
@@ -102,14 +115,7 @@ function saveOptions() {
         customEscape: customEscape,
         statusLineSize: statusLineSize
     }, () => {
-        const btn = document.getElementById('save');
-        const originalText = btn.innerText;
-        btn.innerText = 'Saved!';
-        btn.style.backgroundColor = '#34C759';
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.backgroundColor = '';
-        }, 1500);
+        notifySaved();
     });
 }
 
@@ -139,7 +145,9 @@ function restoreOptions() {
 }
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
-document.getElementById('save').addEventListener('click', saveOptions);
+
+// Auto-save on toggle
+document.getElementById('enabled').addEventListener('change', saveOptions);
 
 // Cancel listening if clicking outside
 document.addEventListener('click', (e) => {
@@ -153,20 +161,22 @@ document.querySelectorAll('.keybinding-btn').forEach(btn => {
     btn.addEventListener('click', handleKeybindingClick);
 });
 
-// Real-time Status Line Size Preview
-document.getElementById('statusLineSize').addEventListener('input', (e) => {
+// Real-time Status Line Size Preview & Auto-save
+const sizeSlider = document.getElementById('statusLineSize');
+sizeSlider.addEventListener('input', (e) => {
     const size = parseInt(e.target.value, 10);
     document.getElementById('statusLineSizeValue').innerText = `${size}px`;
 
-    // Send preview message to all docs tabs
+    // Send preview message to all docs tabs for immediate visual feedback
     chrome.tabs.query({ url: 'https://docs.google.com/*' }, (tabs) => {
         tabs.forEach(tab => {
             chrome.tabs.sendMessage(tab.id, {
                 type: 'VIM_DOCS_SIZE_PREVIEW',
                 size: size
-            }).catch(() => {
-                // Ignore errors (tab might not have content script loaded or ready)
-            });
+            }).catch(() => { });
         });
     });
 });
+
+// Auto-save slider only on release (change) to avoid flooding storage
+sizeSlider.addEventListener('change', saveOptions);

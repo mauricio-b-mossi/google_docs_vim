@@ -67,6 +67,20 @@ header h1 svg {
   gap: 12px;
 }
 
+.save-status {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--success);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.save-status.visible {
+  opacity: 1;
+}
+
 /* Switch styling */
 .switch {
   position: relative;
