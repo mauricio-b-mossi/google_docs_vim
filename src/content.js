@@ -176,14 +176,19 @@ function handleOperatorSequence(key) {
 
     if (motionMatched) {
         if (pendingOperator === 'y') {
-            window.emulator.copy();
-            window.emulator.moveRight();
-            window.emulator.moveLeft();
+            showTemporaryMessage('USE CTRL+C TO COPY');
         } else {
             window.emulator.deleteSelected();
         }
-        if (pendingOperator === 'c') setMode(MODES.INSERT);
-        else setMode(MODES.NORMAL);
+
+        if (pendingOperator === 'y') {
+            // Keep selection for manual Ctrl+C, just clear sequence state
+            setMode(MODES.NORMAL);
+        } else if (pendingOperator === 'c') {
+            setMode(MODES.INSERT);
+        } else {
+            setMode(MODES.NORMAL);
+        }
         return;
     }
 
@@ -194,14 +199,13 @@ function handleOperatorSequence(key) {
     if (commandSequence.endsWith('iw')) {
         window.emulator.selectWord();
         if (pendingOperator === 'y') {
-            window.emulator.copy();
-            window.emulator.moveRight();
-            window.emulator.moveLeft();
+            showTemporaryMessage('USE CTRL+C TO COPY');
+            setMode(MODES.NORMAL);
         } else {
             window.emulator.deleteSelected();
+            if (pendingOperator === 'c') setMode(MODES.INSERT);
+            else setMode(MODES.NORMAL);
         }
-        if (pendingOperator === 'c') setMode(MODES.INSERT);
-        else setMode(MODES.NORMAL);
         return;
     }
 
@@ -226,11 +230,12 @@ function handleOperatorSequence(key) {
         window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, ctrlKey: true, shiftKey: true });
         if (pendingOperator === 'y') {
             showTemporaryMessage('USE CTRL+C TO COPY');
+            setMode(MODES.NORMAL);
         } else {
             window.emulator.deleteSelected();
+            if (pendingOperator === 'c') setMode(MODES.INSERT);
+            else setMode(MODES.NORMAL);
         }
-        if (pendingOperator === 'c') setMode(MODES.INSERT);
-        else setMode(MODES.NORMAL);
         return;
     }
 

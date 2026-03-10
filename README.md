@@ -35,9 +35,10 @@
 
 ### Operators (`d`, `c`, `y`)
 Combine these with motions for powerful editing.
-- **Examples**: `dw` (delete word), `cc` (change line), `yG` (yank to end).
+- **Examples**: `dw` (delete word), `cc` (change line), `yG` (select to end + prompt copy).
 - **Text Objects**: Supports `iw` (inner word), e.g., `ciw`.
-- **Note**: `y` (yank) will prompt you to use native `Ctrl+C`.
+- **Yanking Strategy**: `y` commands (e.g., `yy`, `yw`, `yG`) automatically **select** the target text and display a guidance toast prompting you to press **`Ctrl+C`**. This is necessary due to browser security restrictions on clipboard access.
+
 
 ---
 
