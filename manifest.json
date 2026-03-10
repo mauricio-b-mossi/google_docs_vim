@@ -5,9 +5,7 @@
     "version": "1.0.0",
     "permissions": [
         "storage",
-        "activeTab",
-        "clipboardRead",
-        "clipboardWrite"
+        "activeTab"
     ],
     "content_scripts": [
         {

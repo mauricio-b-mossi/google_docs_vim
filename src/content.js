@@ -28,8 +28,7 @@ let keybindings = {
 let customEscape = 'Escape'; // Additional key that acts as Escape (Escape is always reserved)
 let statusLineSize = 12; // Default font size for the status line in pixels
 
-// --- SEARCH STATE ---
-// (Search is now delegated to native Google Docs Ctrl+F / Ctrl+G)
+// Search is delegated to native Google Docs Ctrl+F / Ctrl+G
 
 // --- UI ---
 let modeIndicator = null;
@@ -181,7 +180,7 @@ function handleOperatorSequence(key) {
         return;
     }
 
-    // --- Inner-word text object: ciw / diw / yiw ---
+    // --- Inner-word text object: ciw / diw ---
     if (key === 'i' && commandSequence.length === 2) {
         return; // wait for object character ('w')
     }
@@ -223,7 +222,6 @@ function handleOperatorSequence(key) {
     setMode(MODES.NORMAL);
 }
 
-// (SEARCH MODE REMOVED - DELEGATED TO NATIVE GOOGLE DOCS)
 
 // ============================================================
 // NORMAL MODE
