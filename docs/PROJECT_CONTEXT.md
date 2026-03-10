@@ -7,11 +7,11 @@ Google Docs lacks natively customizable shortcuts for advanced typography and na
 
 ## Current Status
 - **Core Navigation**: Implemented (`h`, `j`, `k`, `l` — dynamically customizable via options page).
-- **Core Modes**: Implemented (Normal, Insert, Visual, Search).
+- **Core Modes**: Implemented (Normal, Insert, Visual).
 - **Advanced Navigation**: Implemented (`w`, `e`, `b`, `0`, `^`, `$`, `gg`, `G`, `{`, `}`).
 - **Editing**: Implemented (`x`, `d`, `c`, `D`, `C`, `s`).
 - **Visual Mode**: Working (`v` character, `V` line; movement extends selection).
-- **Search**: Implemented (`/` forward, `?` backward, `n`/`N` next/prev, `Enter`/`Esc` to confirm and place cursor).
+- **Search**: Delegated to native Google Docs. Pressing `/`, `?`, `n`, or `N` triggers a guidance toast directing users to native `Ctrl+F`/`Ctrl+G`.
 - **Text Objects**: `iw` only (`ciw`, `diw`, `yiw`). Delimiter objects (`i(`, `i"`, etc.) are **not implementable** — see Known Blockers.
 - **Custom Escape Key**: Users can configure an additional key (e.g. `j`) to exit any mode, identical to `Escape`. The physical `Escape` key is always reserved regardless of this setting.
 
@@ -26,7 +26,8 @@ Google Docs lacks natively customizable shortcuts for advanced typography and na
 3. **Macros** (`q`/`@`): Macro replay needs to re-trigger the Normal mode handler. The `isTrusted` guard (essential to block infinite loops from synthetic events dispatched to Docs) blocks replayed keystrokes from cycling back through our handler.
    - *No clean solution*. Bypassing the `isTrusted` check risks breakage. Deferred to future research.
 
-4. **Search cursor precision**: After `/search` + `Enter`, the cursor lands on the match (via native Docs find + synthetic `Escape`). However, it matches Docs' native cursor placement — not Vim's exact "start of match" positioning.
+4. **Search Delegation**: Due to Google Docs' complex rendering (Canvas-based) and separate iframes for the find/replace toolbar, maintaining a custom Vim Search Mode integrated into the Docs UI is not reliable.
+   - *Solution*: Search is handled transparently by native Docs shortcuts. The extension provides guidance toasts to bridge the UX gap.
 
 ## Future Roadmap
 

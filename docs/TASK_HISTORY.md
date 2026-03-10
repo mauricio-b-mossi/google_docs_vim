@@ -30,3 +30,10 @@ This file acts as a chronological changelog of major milestones and decisions. F
 - **`isEscapeKey()` helper**: Introduced in `content.js` to centralise the escape check; all four mode handlers call it instead of hardcoded `key === 'Escape'` comparisons.
 - **Storage**: `customEscape` persisted to `chrome.storage.sync`, loaded on init, and updated live via `onChanged`.
 
+## v1.1.3 (Search Delegation & UI Fixes)
+- **Search Mode Pivot**: Removed custom `SEARCH` mode. Search is now delegated entirely to native Google Docs shortcuts (`Ctrl+F`, `Ctrl+G`, `Ctrl+H`). 
+- **Guidance Toasts**: Pressing `/`, `?`, `n`, or `N` in Normal Mode now triggers a guidance toast (like Yank/Paste) to direct users to native shortcuts.
+- **Transparency**: Explicitly made `Ctrl+F`, `Ctrl+G`, and `Ctrl+H` transparent in the `keydown` listener.
+- **Disable Toggle UX**: Added "VIM DISABLED/ENABLED" toasts when toggling the extension. Mode now resets to `NORMAL` on both disable and enable.
+- **Refactoring**: Extracted `handleOperatorSequence` in `content.js` for better readability and removed duplicate `case 'u'` logic.
+- **Build Verification**: Verified all changes with clean production builds (`npm run build`).

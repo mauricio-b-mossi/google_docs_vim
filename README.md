@@ -13,13 +13,15 @@ Bring the power and speed of Vim modal editing to Google Docs. This extension in
 - **Editing**: `x` (delete char), `d` (delete), `c` (change), `s` (substitute), `D`, `C` (to end of line).
 - **Undo/Redo**: `u` (undo), `Ctrl+r` (redo).
 
-### Visual Mode
-- Supports character-wise (`v`) and line-wise (`V`) selection.
-- Apply operators like `d`, `c`, `y` on selection.
+### Search
+- **Transparent Delegation**: Pressing search keys shows a guidance toast for native Google Docs shortcuts.
+- **Native Integration**: Use `Ctrl+F` for searching and `Ctrl+G` for next result.
+- **Consistency**: Mirrors the "native pass-through" strategy used for clipboard access.
 
 ### Customization
 - Fully customizable keybindings for basic navigation via the extension's options page.
-- Toggle extension on/off globally.
+- Customizable additional escape key (e.g. `jj` equivalent).
+- Toggle extension on/off globally with visual "DISABLED/ENABLED" feedback.
 
 ## 🛠 Installation
 
@@ -55,22 +57,34 @@ Bring the power and speed of Vim modal editing to Google Docs. This extension in
 - **Normal Mode**: Default mode. Use Vim keys for navigation and commands.
 - **Insert Mode**: Press `i`, `I`, `a`, `A`, `o`, or `O` to enter. Type normally. Press `Esc` or `Ctrl+[` to return to Normal Mode.
 - **Visual Mode**: Press `v` or `V` to start selecting text. Press `Esc` to return to Normal Mode.
+- **Search**: For searching, use Google Docs' native `Ctrl+F` and `Ctrl+G`. The extension delegates search functionality to the native Google Docs experience.
 
 ## 🏗 Architecture
 
 VimDocs works by injecting a content script (`src/content.js`) into Google Docs tabs. 
 
 1.  **Event Interception**: The extension attaches a `keydown` listener in the capture phase to intercept keystrokes before Google Docs processes them.
-2.  **State Management**: It maintains a state machine to track the current mode (Normal, Insert, Visual) and any pending command sequences (e.g., `dd`).
+2. **State Management**: It maintains a state machine to track the current mode (Normal, Insert, Visual) and any pending command sequences (e.g., `dd`).
 3.  **Emulation Layer**: When a Vim command is triggered, the extension uses `src/emulator.js` to dispatch synthetic `KeyboardEvent`s (like `ArrowDown` or `Home`) to the Google Docs editor components.
 4.  **UI Feedback**: A lightweight mode indicator is injected into the DOM to provide real-time feedback on the current mode and active command sequence.
 
 ## ⚠️ Known Limitations
 
 ### Clipboard Access
-Due to browser security restrictions, the extension cannot directly programmaticallly access the system clipboard.
+Due to browser security restrictions, the extension cannot directly programmatically access the system clipboard.
 - When using `y` (yank) or `p` (put), a temporary UI toast will guide you to use native shortcuts (`Ctrl+C` / `Ctrl+V`).
-- The extension explicitly allows these native modifier combinations to pass through un-intercepted.
+
+### Delimiter Text Objects (`di(`, `ci"`, etc.)
+Requires reading the document text to locate surrounding bracket/quote characters. Since Google Docs renders inside a canvas-based iframe, the text is not accessible from the extension's content script. 
+- **Only `iw` (inner word) is supported**, as it relies on native word-boundary navigation shortcuts.
+
+### Search
+Due to Google Docs' complex rendering (Canvas-based) and the use of separate iframes for the find/replace toolbar, the extension cannot reliably manage a custom Vim search mode.
+- Pressing `/`, `?`, `n`, or `N` will show a guidance toast directing you to use native shortcuts (`Ctrl+F`, `Ctrl+G`).
+- This ensures full compatibility with Google Docs' native search and replace functionality.
+
+### Macros (`q` / `@`)
+Reliable macro replay is currently blocked by browser `isTrusted` event security, which prevents replayed keyboard events from being re-intercepted by the extension's own state machine without risking infinite loops.
 
 ## 📄 License
 

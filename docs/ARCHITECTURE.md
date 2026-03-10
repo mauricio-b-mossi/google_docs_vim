@@ -31,7 +31,10 @@
 3.  **Event Interception**: 
     - `content.js` attaches a `keydown` listener to `window` (with `capture: true`).
     - If enabled, it intercepts keystrokes before Docs processes them.
-    - Modifier keys (`Ctrl+C`, `Ctrl+V`) are explicitly ignored to allow native OS clipboard functionality.
+    - Modifier keys (`Ctrl+C`, `Ctrl+V`, `Ctrl+F`, `Ctrl+G`, `Ctrl+H`) are explicitly ignored to allow native OS/Docs functionality.
 4.  **Emulation**: When a Vim command is recognized (e.g., `j`), `content.js` calls a helper in `src/emulator.js`. `emulator.js` reconstructs a synthetic `KeyboardEvent` (e.g., `ArrowDown`) and dispatches it directly to the nested `docs-editor` component or the active element.
-5.  **UI Feedback**: A small, absolute-positioned `div` (the Mode Indicator) is injected into the DOM to display `-- NORMAL --` or temporary toasts (e.g., `USE CTRL+C`).
+5.  **UI Feedback / Guidance**: 
+    - A Mode Indicator displays `-- NORMAL --`, `-- INSERT --`, etc.
+    - For non-implementable Vim features (Clipboard access, Search), guidance toasts (e.g., `USE CTRL+F TO SEARCH`) appear to leverage native browser/Docs shortcuts.
 6.  **Settings**: Users customize keybindings in `options.html`. These are saved to `chrome.storage.sync` and dynamically loaded by `content.js`.
+
