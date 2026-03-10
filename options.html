@@ -1,69 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-  <meta charset="UTF-8">
-  <title>Vim for Google Docs - Options</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 400px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    input[type="text"] {
-      padding: 8px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    button {
-      padding: 10px 15px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    #status {
-      margin-top: 10px;
-      color: green;
-    }
-  </style>
+  <title>VimDocs Settings</title>
+  <link rel="stylesheet" href="src/options.css">
 </head>
+
 <body>
-  <h1>Vim for Google Docs Settings</h1>
-  
-  <div class="form-group">
-    <label for="key-left">Move Left</label>
-    <input type="text" id="key-left" value="h" maxlength="1">
-  </div>
-  
-  <div class="form-group">
-    <label for="key-down">Move Down</label>
-    <input type="text" id="key-down" value="j" maxlength="1">
-  </div>
-  
-  <div class="form-group">
-    <label for="key-up">Move Up</label>
-    <input type="text" id="key-up" value="k" maxlength="1">
-  </div>
-  
-  <div class="form-group">
-    <label for="key-right">Move Right</label>
-    <input type="text" id="key-right" value="l" maxlength="1">
-  </div>
+  <div class="container">
+    <header>
+      <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="m18 16 4-4-4-4"></path>
+          <path d="m6 8-4 4 4 4"></path>
+          <path d="m14.5 4-5 16"></path>
+        </svg>
+        VimDocs
+      </h1>
+      <div class="status-toggle">
+        <label class="switch">
+          <input type="checkbox" id="enabled">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </header>
 
-  <button id="save-btn">Save Options</button>
-  <div id="status"></div>
+    <div class="section-title">Navigation Keybindings</div>
+    <div class="keybinding-list">
+      <div class="keybinding-item">
+        <div class="keybinding-label">Move Left</div>
+        <button type="button" id="left" class="keybinding-btn"></button>
+      </div>
+      <div class="keybinding-item">
+        <div class="keybinding-label">Move Down</div>
+        <button type="button" id="down" class="keybinding-btn"></button>
+      </div>
+      <div class="keybinding-item">
+        <div class="keybinding-label">Move Up</div>
+        <button type="button" id="up" class="keybinding-btn"></button>
+      </div>
+      <div class="keybinding-item">
+        <div class="keybinding-label">Move Right</div>
+        <button type="button" id="right" class="keybinding-btn"></button>
+      </div>
+    </div>
 
-  <script src="options.js" type="module"></script>
+    <div class="reserved-shorthands">
+      <div class="reserved-title">RESERVED SHORTCUTS</div>
+      <div class="reserved-item"><span>Esc</span> : Normal Mode</div>
+      <div class="reserved-item"><span>i</span> : Insert Mode</div>
+      <div class="reserved-item"><span>v</span> : Visual Mode</div>
+      <div class="reserved-item"><span>Ctrl+C</span> : Native Copy</div>
+    </div>
+
+    <div class="footer">
+      <button id="save" class="btn btn-primary">Save Changes</button>
+    </div>
+  </div>
+  <script type="module" src="options.js"></script>
 </body>
+
 </html>

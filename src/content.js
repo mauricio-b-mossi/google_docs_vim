@@ -18,6 +18,7 @@ const MODES = {
 let currentMode = MODES.NORMAL;
 let commandSequence = ''; // Buffer for multi-key commands like 'dd' or '2w'
 let pendingOperator = null; // 'c', 'd', 'y'
+let isEnabled = true;
 let keybindings = {
     left: 'h',
     down: 'j',
@@ -53,6 +54,9 @@ function createModeIndicator() {
             commandSequence = e.data.sequence;
             updateModeIndicator();
         }
+        if (e.data && e.data.type === 'VIM_DOCS_MSG') {
+            showTemporaryMessage(e.data.msg);
+        }
     });
 }
 
@@ -64,6 +68,14 @@ function updateModeIndicator() {
     }
 
     if (!modeIndicator) return;
+
+    if (!isEnabled) {
+        modeIndicator.style.display = 'none';
+        return;
+    } else {
+        modeIndicator.style.display = 'block';
+    }
+
     if (modeIndicator.dataset.tempMsg) return; // don't override temporary message
 
     let text = `-- ${currentMode} --`;
@@ -109,6 +121,9 @@ function setMode(mode) {
 }
 
 function handleNormalModeEvent(e) {
+    // Ignore if disabled
+    if (!isEnabled) return;
+
     // Ignore modifier key presses by themselves
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
 
@@ -341,6 +356,7 @@ function handleNormalModeEvent(e) {
 }
 
 function handleInsertModeEvent(e) {
+    if (!isEnabled) return;
     // In Insert mode, let Google Docs handle everything EXCEPT Escape
     if (e.key === 'Escape' || (e.key === '[' && e.ctrlKey)) {
         e.preventDefault();
@@ -350,6 +366,7 @@ function handleInsertModeEvent(e) {
 }
 
 function handleVisualModeEvent(e) {
+    if (!isEnabled) return;
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
 
     const lowerKey = e.key.toLowerCase();
@@ -445,6 +462,11 @@ function onKeyDown(e) {
     // But checking if we are in an editable area that isn't the main canvas can be tricky.
     // For now, if we are normal mode, we intercept.
 
+    if (!isEnabled) {
+        // If disabled, let all events pass through
+        return;
+    }
+
     if (currentMode === MODES.NORMAL) {
         handleNormalModeEvent(e);
     } else if (currentMode === MODES.INSERT) {
@@ -458,17 +480,24 @@ function onKeyDown(e) {
 
 function loadSettings(callback) {
     if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.sync.get({ keybindings: keybindings }, (items) => {
+        chrome.storage.sync.get({
+            enabled: true,
+            keybindings: keybindings
+        }, (items) => {
+            isEnabled = items.enabled;
             keybindings = items.keybindings;
-            console.log('[VimDocs] Loaded keybindings', keybindings);
+            console.log('[VimDocs] Loaded settings', { isEnabled, keybindings });
+            updateModeIndicator();
             if (callback) callback();
         });
 
         // Listen for changes from options page
         chrome.storage.onChanged.addListener((changes, namespace) => {
-            if (namespace === 'sync' && changes.keybindings) {
-                keybindings = changes.keybindings.newValue;
-                console.log('[VimDocs] Keybindings updated via options', keybindings);
+            if (namespace === 'sync') {
+                if (changes.enabled) isEnabled = changes.enabled.newValue;
+                if (changes.keybindings) keybindings = changes.keybindings.newValue;
+                console.log('[VimDocs] Settings updated via options', { isEnabled, keybindings });
+                updateModeIndicator();
             }
         });
     } else {
