@@ -6,17 +6,38 @@
 Google Docs lacks natively customizable shortcuts for advanced typography and navigation. VimDocs intercepts standard key presses and translates them into navigation and editing commands within the Google Docs canvas.
 
 ## Current Status
-- **Core Navigation**: Implemented (`h`, `j`, `k`, `l` - dynamically customizable).
-- **Core Modes**: Implemented (Normal, Insert, Visual).
-- **Advanced Navigation**: Implemented (`w`, `e`, `b`, `0`, `^`, `$`, `gg`, `G`).
-- **Editing**: Implemented (`x`, `d`, `c`, `s`, `D`, `C`).
-- **Visual Mode Integration**: Working for selecting lines (`V`) and characters (`v`).
+- **Core Navigation**: Implemented (`h`, `j`, `k`, `l` — dynamically customizable via options page).
+- **Core Modes**: Implemented (Normal, Insert, Visual, Search).
+- **Advanced Navigation**: Implemented (`w`, `e`, `b`, `0`, `^`, `$`, `gg`, `G`, `{`, `}`).
+- **Editing**: Implemented (`x`, `d`, `c`, `D`, `C`, `s`).
+- **Visual Mode**: Working (`v` character, `V` line; movement extends selection).
+- **Search**: Implemented (`/` forward, `?` backward, `n`/`N` next/prev, `Enter`/`Esc` to confirm and place cursor).
+- **Text Objects**: `iw` only (`ciw`, `diw`, `yiw`). Delimiter objects (`i(`, `i"`, etc.) are **not implementable** — see Known Blockers.
+- **Custom Escape Key**: Users can configure an additional key (e.g. `j`) to exit any mode, identical to `Escape`. The physical `Escape` key is always reserved regardless of this setting.
 
 ## Known Blockers & Solutions
-1.  **Clipboard**: The browser fiercely protects clipboard access within the Docs iframe. We cannot synthetically trigger a copy or paste.
-    - *Solution*: When a user presses `y` or `p`, we show a UI toast guiding them to use `Ctrl+C` or `Ctrl+V`. The extension explicitly allows these shortcuts to pass through un-intercepted.
 
-## Future Roadmap (Ideas)
-- Search (`/` and `?`).
-- Text objects (`ciw`, `di(`).
-- Macros (`q`).
+1. **Clipboard**: The browser fiercely protects clipboard access within the Docs iframe. We cannot synthetically trigger a copy or paste.
+   - *Solution*: `y`/`p` show a toast guiding users to `Ctrl+C`/`Ctrl+V`. Those shortcuts are explicitly passed through un-intercepted.
+
+2. **Delimiter text objects** (`di(`, `ci"`, etc.): Requires reading the document text to locate surrounding bracket/quote characters. Google Docs renders inside a canvas-based iframe — the text is not accessible from the extension's content script.
+   - *No solution available* without a Google Docs API integration (which doesn't exist for real-time editing).
+
+3. **Macros** (`q`/`@`): Macro replay needs to re-trigger the Normal mode handler. The `isTrusted` guard (essential to block infinite loops from synthetic events dispatched to Docs) blocks replayed keystrokes from cycling back through our handler.
+   - *No clean solution*. Bypassing the `isTrusted` check risks breakage. Deferred to future research.
+
+4. **Search cursor precision**: After `/search` + `Enter`, the cursor lands on the match (via native Docs find + synthetic `Escape`). However, it matches Docs' native cursor placement — not Vim's exact "start of match" positioning.
+
+## Future Roadmap
+
+### Feasible
+- **Count prefixes** (`3w`, `5dd`, `10j`): Pure state machine work, no DOM access needed.
+- **`f`/`F`/`t`/`T` character-find motions**: Requires the same text-reading workaround as delimiter objects — currently not feasible, but worth revisiting if a reliable text-extraction method emerges.
+- **`s` (substitute) improvements**: Currently maps to `cl`. Could be refined.
+- **Mark-based navigation** (`m`, `` ` ``, `'`): Would require storing cursor positions via the Docs API or a selection snapshot — may be feasible.
+
+### Requires Docs API / Not Feasible Without Browser Access
+- **Delimiter text objects** (`di(`, `ci"`, etc.)
+- **Macros with faithful replay**
+- **Visual block mode** (`Ctrl+V`)
+- **`:` command mode** (Ex commands)

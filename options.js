@@ -6,9 +6,14 @@ const defaultKeybindings = {
     right: 'l'
 };
 
+const defaultCustomEscape = 'Escape';
+
+// Keys that can NEVER be used for navigation bindings.
+// Note: Escape is excluded from this list — it IS allowed as the customEscape value.
 const reservedKeys = ['i', 'v', 'V', 'x', 'd', 'c', 'y', 'p', 'u', 'G', 'g', '0', '$', '^', '{', '}'];
 
 let listeningButton = null;
+let isListeningForEscape = false; // true when the customEscape button is active
 
 function formatKey(key) {
     if (!key) return '';
@@ -21,6 +26,7 @@ function handleKeybindingClick(e) {
     if (listeningButton) cancelListening();
 
     listeningButton = e.currentTarget;
+    isListeningForEscape = listeningButton.id === 'customEscape';
     listeningButton.dataset.prevText = listeningButton.innerText;
     listeningButton.innerText = 'Press key...';
     listeningButton.classList.add('listening');
@@ -35,6 +41,7 @@ function cancelListening() {
     listeningButton.innerText = listeningButton.dataset.prevText;
     listeningButton.classList.remove('listening');
     listeningButton = null;
+    isListeningForEscape = false;
     document.removeEventListener('keydown', captureKey, { capture: true });
 }
 
@@ -50,15 +57,29 @@ function captureKey(e) {
         key = key.toLowerCase();
     }
 
-    if (reservedKeys.includes(key)) {
+    // When capturing the custom escape key, Escape itself is allowed (resets to default).
+    // For navigation bindings, Escape is not meaningful and also not in reservedKeys,
+    // so we only need to check regular reserved keys here.
+    if (!isListeningForEscape && reservedKeys.includes(key)) {
         alert(`Key "${key}" is reserved and cannot be used for navigation.`);
         cancelListening();
         return;
     }
 
+    // Prevent setting the custom escape to the same key as a navigation binding
+    if (isListeningForEscape && key !== 'Escape') {
+        const navKeys = ['left', 'down', 'up', 'right'].map(dir => document.getElementById(dir).dataset.key);
+        if (navKeys.includes(key)) {
+            alert(`Key "${formatKey(key)}" is already used for a navigation binding.`);
+            cancelListening();
+            return;
+        }
+    }
+
     listeningButton.dataset.key = key;
     listeningButton.innerText = formatKey(key);
     listeningButton.classList.remove('listening');
+    isListeningForEscape = false;
 
     document.removeEventListener('keydown', captureKey, { capture: true });
     listeningButton = null;
@@ -72,10 +93,12 @@ function saveOptions() {
         up: document.getElementById('up').dataset.key || 'k',
         right: document.getElementById('right').dataset.key || 'l'
     };
+    const customEscape = document.getElementById('customEscape').dataset.key || 'Escape';
 
     chrome.storage.sync.set({
         enabled: enabled,
-        keybindings: keybindings
+        keybindings: keybindings,
+        customEscape: customEscape
     }, () => {
         const btn = document.getElementById('save');
         const originalText = btn.innerText;
@@ -91,7 +114,8 @@ function saveOptions() {
 function restoreOptions() {
     chrome.storage.sync.get({
         enabled: true,
-        keybindings: defaultKeybindings
+        keybindings: defaultKeybindings,
+        customEscape: defaultCustomEscape
     }, (items) => {
         document.getElementById('enabled').checked = items.enabled;
 
@@ -100,6 +124,10 @@ function restoreOptions() {
             btn.dataset.key = items.keybindings[dir];
             btn.innerText = formatKey(items.keybindings[dir]);
         });
+
+        const escBtn = document.getElementById('customEscape');
+        escBtn.dataset.key = items.customEscape;
+        escBtn.innerText = formatKey(items.customEscape);
     });
 }
 
@@ -113,7 +141,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Attach listeners to buttons
+// Attach listeners to all keybinding buttons (navigation + customEscape)
 document.querySelectorAll('.keybinding-btn').forEach(btn => {
     btn.addEventListener('click', handleKeybindingClick);
 });

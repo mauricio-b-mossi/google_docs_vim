@@ -150,6 +150,13 @@ input:checked+.slider:before {
   font-weight: 500;
 }
 
+.keybinding-sublabel {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-weight: 400;
+}
+
 .keybinding-btn {
   background: #1a1a1a;
   border: 1px solid var(--border);

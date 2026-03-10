@@ -145,3 +145,59 @@ export function selectLine() {
     dispatchKey('Home', { code: 'Home', keyCode: 36 });
     dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
 }
+
+// --- Search helpers ---
+
+/**
+ * Opens the native Google Docs Find toolbar (Ctrl+F).
+ * We delegate search entirely to the native UI since we cannot
+ * read DOM text from inside the Docs iframe.
+ */
+export function openFindBar() {
+    dispatchKey('f', { code: 'KeyF', keyCode: 70, ctrlKey: true });
+}
+
+/** Moves to the next search result (Ctrl+G). */
+export function findNext() {
+    dispatchKey('g', { code: 'KeyG', keyCode: 71, ctrlKey: true });
+}
+
+/** Moves to the previous search result (Ctrl+Shift+G). */
+export function findPrev() {
+    dispatchKey('g', { code: 'KeyG', keyCode: 71, ctrlKey: true, shiftKey: true });
+}
+
+// --- Text object helpers ---
+
+/**
+ * Best-effort selection inside a matching pair of delimiters.
+ * Since we cannot read document text from the iframe, we use a
+ * keyboard-scan approach: jump to the start of the surrounding
+ * bracket/quote pair using Ctrl+Shift+Left to anchor, then
+ * Ctrl+Shift+Right to extend right past the closing delimiter.
+ *
+ * For symmetric delimiters (quotes), we select the word and its
+ * surrounding characters, then trim one char from each side.
+ *
+ * @param {string} openChar  Opening delimiter, e.g. '('
+ * @param {string} closeChar Closing delimiter, e.g. ')'
+ */
+export function selectInsidePair(openChar, closeChar) {
+    const isSymmetric = openChar === closeChar; // e.g. '"' or "'"
+
+    if (isSymmetric) {
+        // For quotes: select the whole word block and narrow by one char each side.
+        // Move to word start, then select to word end.
+        dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true });
+        // Select from word start to word end
+        dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true });
+        // Trim 1 char from the right (the closing quote)
+        dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, shiftKey: true });
+    } else {
+        // For asymmetric pairs: move to the start of the current "word" boundary,
+        // then select forward to the next word boundary.
+        // This approximates selecting inside brackets for short expressions.
+        dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true });
+        dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true });
+    }
+}

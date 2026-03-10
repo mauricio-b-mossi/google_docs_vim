@@ -12,7 +12,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.js-C-_THJvn.js"
+        "assets/content.js-Da2SQfCv.js"
       ],
       "matches": [
         "https://docs.google.com/*"
@@ -35,7 +35,7 @@
         "https://docs.google.com/*"
       ],
       "resources": [
-        "assets/content.js-C-_THJvn.js"
+        "assets/content.js-Da2SQfCv.js"
       ],
       "use_dynamic_url": false
     }
