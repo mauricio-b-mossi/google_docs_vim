@@ -380,7 +380,7 @@ function handleVisualModeEvent(e) {
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
 
     const lowerKey = e.key.toLowerCase();
-    if ((e.ctrlKey || e.metaKey) && (lowerKey === 'c' || lowerKey === 'v' || lowerKey === 'x' || lowerKey === 'a' || lowerKey === 'z')) {
+    if ((e.ctrlKey || e.metaKey) && (lowerKey === 'c' || lowerKey === 'v' || lowerKey === 'x' || lowerKey === 'a' || lowerKey === 'z' || lowerKey === 'f' || lowerKey === 'g' || lowerKey === 'h')) {
         return;
     }
 
@@ -401,6 +401,16 @@ function handleVisualModeEvent(e) {
     if (key === 'd' || key === 'x') { window.emulator.deleteSelected(); setMode(MODES.NORMAL); return; }
     if (key === 'y') { showTemporaryMessage('USE CTRL+C TO COPY'); return; }
     if (key === 'p' || key === 'P') { showTemporaryMessage('USE CTRL+V TO PASTE'); return; }
+
+    // --- Search (Delegated) ---
+    if (key === '/' || key === '?') {
+        showTemporaryMessage('USE CTRL+F TO SEARCH');
+        return;
+    }
+    if (key === 'n' || key === 'N') {
+        showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
+        return;
+    }
 
     if (key === 'g') {
         commandSequence += 'g';
