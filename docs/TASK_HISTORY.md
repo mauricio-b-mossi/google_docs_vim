@@ -37,3 +37,9 @@ This file acts as a chronological changelog of major milestones and decisions. F
 - **Disable Toggle UX**: Added "VIM DISABLED/ENABLED" toasts when toggling the extension. Mode now resets to `NORMAL` on both disable and enable.
 - **Refactoring**: Extracted `handleOperatorSequence` in `content.js` for better readability and removed duplicate `case 'u'` logic.
 - **Build Verification**: Verified all changes with clean production builds (`npm run build`).
+
+## v1.1.4 (Real-Time Synergy)
+- **Auto-Save Refactor**: Eliminated the manual "Save" button in settings. All settings (toggle, keys, size) now persist instantly on interaction.
+- **Visual Feedback**: Added a "SAVED" indicator in the options dashboard.
+- **Messaging System**: Implemented `chrome.tabs.sendMessage` for live status line size previews, allowing users to see size changes in Docs before releasing the slider.
+- **Documentation Overhaul**: Comprehensive update of `README.md` and `docs/` to provide a full command matrix, limitation solutions, and architectural details.

@@ -36,5 +36,10 @@
 5.  **UI Feedback / Guidance**: 
     - A Mode Indicator displays `-- NORMAL --`, `-- INSERT --`, etc.
     - For non-implementable Vim features (Clipboard access, Search), guidance toasts (e.g., `USE CTRL+F TO SEARCH`) appear to leverage native browser/Docs shortcuts.
-6.  **Settings**: Users customize keybindings in `options.html`. These are saved to `chrome.storage.sync` and dynamically loaded by `content.js`.
+6.  **Real-Time Settings**: 
+    - Users customize keybindings and status line size in `options.html`. 
+    - All changes are auto-saved to `chrome.storage.sync` immediately upon interaction.
+    - **Live Preview**: The options page sends a `VIM_DOCS_SIZE_PREVIEW` message via `chrome.tabs.sendMessage` for instant UI feedback without requiring a save/storage cycle.
+    - `content.js` uses a `chrome.storage.onChanged` listener to propagate settings globally across all open tabs instantly.
+
 
