@@ -26,6 +26,7 @@ let keybindings = {
     right: 'l'
 };
 let customEscape = 'Escape'; // Additional key that acts as Escape (Escape is always reserved)
+let statusLineSize = 12; // Default font size for the status line in pixels
 
 // --- SEARCH STATE ---
 // (Search is now delegated to native Google Docs Ctrl+F / Ctrl+G)
@@ -41,15 +42,27 @@ function createModeIndicator() {
     modeIndicator.style.position = 'fixed';
     modeIndicator.style.bottom = '0';
     modeIndicator.style.left = '0';
-    modeIndicator.style.padding = '4px 8px';
+    modeIndicator.style.padding = `${Math.round(statusLineSize / 3)}px ${Math.round(statusLineSize * 2 / 3)}px`;
     modeIndicator.style.backgroundColor = '#333';
     modeIndicator.style.color = '#fff';
     modeIndicator.style.fontFamily = 'monospace';
-    modeIndicator.style.fontSize = '12px';
+    modeIndicator.style.fontSize = `${statusLineSize}px`;
     modeIndicator.style.zIndex = '999999';
     modeIndicator.style.pointerEvents = 'none';
     modeIndicator.innerText = `-- ${currentMode} --`;
     document.body.appendChild(modeIndicator);
+
+    // Listener for real-time size preview (without saving)
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.addListener((message) => {
+            if (message.type === 'VIM_DOCS_SIZE_PREVIEW') {
+                if (modeIndicator) {
+                    modeIndicator.style.fontSize = `${message.size}px`;
+                    modeIndicator.style.padding = `${Math.round(message.size / 3)}px ${Math.round(message.size * 2 / 3)}px`;
+                }
+            }
+        });
+    }
 
     window.addEventListener('message', (e) => {
         if (e.data && e.data.type === 'VIM_DOCS_MODE') {
@@ -457,12 +470,14 @@ function loadSettings(callback) {
         chrome.storage.sync.get({
             enabled: true,
             keybindings: keybindings,
-            customEscape: 'Escape'
+            customEscape: 'Escape',
+            statusLineSize: 12
         }, (items) => {
             isEnabled = items.enabled;
             keybindings = items.keybindings;
             customEscape = items.customEscape;
-            console.log('[VimDocs] Loaded settings', { isEnabled, keybindings, customEscape });
+            statusLineSize = items.statusLineSize;
+            console.log('[VimDocs] Loaded settings', { isEnabled, keybindings, customEscape, statusLineSize });
             updateModeIndicator();
             if (callback) callback();
         });
@@ -480,7 +495,14 @@ function loadSettings(callback) {
                 }
                 if (changes.keybindings) keybindings = changes.keybindings.newValue;
                 if (changes.customEscape) customEscape = changes.customEscape.newValue;
-                console.log('[VimDocs] Settings updated via options', { isEnabled, keybindings, customEscape });
+                if (changes.statusLineSize) {
+                    statusLineSize = changes.statusLineSize.newValue;
+                    if (modeIndicator) {
+                        modeIndicator.style.fontSize = `${statusLineSize}px`;
+                        modeIndicator.style.padding = `${Math.round(statusLineSize / 3)}px ${Math.round(statusLineSize * 2 / 3)}px`;
+                    }
+                }
+                console.log('[VimDocs] Settings updated via options', { isEnabled, keybindings, customEscape, statusLineSize });
                 updateModeIndicator();
             }
         });

@@ -251,3 +251,34 @@ input:checked+.slider:before {
   color: var(--foreground);
   font-family: 'Geist Mono', monospace;
 }
+
+/* Size Slider Styling */
+.size-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--neon-green);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--neon-green-glow);
+  transition: transform 0.2s;
+}
+
+.size-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.size-slider::-webkit-slider-thumb:active {
+  transform: scale(0.9);
+}

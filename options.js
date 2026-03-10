@@ -94,11 +94,13 @@ function saveOptions() {
         right: document.getElementById('right').dataset.key || 'l'
     };
     const customEscape = document.getElementById('customEscape').dataset.key || 'Escape';
+    const statusLineSize = parseInt(document.getElementById('statusLineSize').value, 10) || 12;
 
     chrome.storage.sync.set({
         enabled: enabled,
         keybindings: keybindings,
-        customEscape: customEscape
+        customEscape: customEscape,
+        statusLineSize: statusLineSize
     }, () => {
         const btn = document.getElementById('save');
         const originalText = btn.innerText;
@@ -115,7 +117,8 @@ function restoreOptions() {
     chrome.storage.sync.get({
         enabled: true,
         keybindings: defaultKeybindings,
-        customEscape: defaultCustomEscape
+        customEscape: defaultCustomEscape,
+        statusLineSize: 12
     }, (items) => {
         document.getElementById('enabled').checked = items.enabled;
 
@@ -128,6 +131,10 @@ function restoreOptions() {
         const escBtn = document.getElementById('customEscape');
         escBtn.dataset.key = items.customEscape;
         escBtn.innerText = formatKey(items.customEscape);
+
+        const sizeSlider = document.getElementById('statusLineSize');
+        sizeSlider.value = items.statusLineSize;
+        document.getElementById('statusLineSizeValue').innerText = `${items.statusLineSize}px`;
     });
 }
 
@@ -144,4 +151,22 @@ document.addEventListener('click', (e) => {
 // Attach listeners to all keybinding buttons (navigation + customEscape)
 document.querySelectorAll('.keybinding-btn').forEach(btn => {
     btn.addEventListener('click', handleKeybindingClick);
+});
+
+// Real-time Status Line Size Preview
+document.getElementById('statusLineSize').addEventListener('input', (e) => {
+    const size = parseInt(e.target.value, 10);
+    document.getElementById('statusLineSizeValue').innerText = `${size}px`;
+
+    // Send preview message to all docs tabs
+    chrome.tabs.query({ url: 'https://docs.google.com/*' }, (tabs) => {
+        tabs.forEach(tab => {
+            chrome.tabs.sendMessage(tab.id, {
+                type: 'VIM_DOCS_SIZE_PREVIEW',
+                size: size
+            }).catch(() => {
+                // Ignore errors (tab might not have content script loaded or ready)
+            });
+        });
+    });
 });

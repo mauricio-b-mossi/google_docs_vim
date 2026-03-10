@@ -21,7 +21,9 @@ Bring the power and speed of Vim modal editing to Google Docs. This extension in
 ### Customization
 - Fully customizable keybindings for basic navigation via the extension's options page.
 - Customizable additional escape key (e.g. `jj` equivalent).
+- **Status Line Size**: Adjust the font size of the mode indicator with real-time preview.
 - Toggle extension on/off globally with visual "DISABLED/ENABLED" feedback.
+- **Neon-Dark Aesthetic**: Premium UI with glassmorphism and neon accents.
 
 ## 🛠 Installation
 
