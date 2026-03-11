@@ -141,7 +141,6 @@ function setMode(mode) {
     commandSequence = '';
     pendingOperator = null;
     updateModeIndicator();
-    console.log(`[VimDocs] Switched to ${mode} mode`);
 }
 
 function handleOperatorSequence(key) {
@@ -272,7 +271,6 @@ function handleNormalModeEvent(e) {
     }
 
     const key = e.key;
-    console.log(`[VimDocs] Normal mode key: ${key}`);
 
     // Handle pending operators (c, d)
     if (pendingOperator) {
@@ -374,7 +372,6 @@ function handleNormalModeEvent(e) {
                 setMode(MODES.NORMAL);
                 break;
             }
-            console.log(`[VimDocs] Unmapped normal mode key: ${key}`);
             return false;
     }
 }
@@ -409,7 +406,6 @@ function handleVisualModeEvent(e) {
     e.stopPropagation();
 
     const key = e.key;
-    console.log(`[VimDocs] Visual mode key: ${key}`);
 
     if (isEscapeKey(key) || key === 'v' || key === 'V') {
         window.emulator.moveRight();
@@ -505,7 +501,6 @@ function loadSettings(callback) {
             keybindings = items.keybindings;
             customEscape = items.customEscape;
             statusLineSize = items.statusLineSize;
-            console.log('[VimDocs] Loaded settings', { isEnabled, keybindings, customEscape, statusLineSize });
             updateModeIndicator();
             if (callback) callback();
         });
@@ -530,7 +525,6 @@ function loadSettings(callback) {
                         modeIndicator.style.padding = `${Math.round(statusLineSize / 3)}px ${Math.round(statusLineSize * 2 / 3)}px`;
                     }
                 }
-                console.log('[VimDocs] Settings updated via options', { isEnabled, keybindings, customEscape, statusLineSize });
                 updateModeIndicator();
             }
         });
@@ -540,7 +534,6 @@ function loadSettings(callback) {
 }
 
 function init() {
-    console.log(`[VimDocs] Initializing Vim extension in ${isTopWindow ? 'top window' : 'iframe'}...`);
     loadSettings(() => {
         createModeIndicator();
         window.addEventListener('keydown', onKeyDown, { capture: true });

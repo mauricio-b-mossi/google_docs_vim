@@ -18,7 +18,6 @@ export function dispatchKey(key, options = {}) {
     }
 
     if (!target) {
-        console.warn('[VimDocs] No active element to dispatch to.');
         return;
     }
 
@@ -39,7 +38,6 @@ export function dispatchKey(key, options = {}) {
 
     const event = new KeyboardEvent('keydown', eventOptions);
 
-    console.log(`[VimDocs] Dispatching synthetic event: ${key}`, eventOptions);
     target.dispatchEvent(event);
 
     // Optionally dispatch keyup if needed by Docs, though usually keydown is enough for actions
@@ -117,8 +115,7 @@ export function moveEnd() {
 }
 
 export function deleteToLineEnd() {
-    dispatchKey('Home', { code: 'Home', keyCode: 36 });
-    // This is unreliable without text selection, but Shift+End then Delete works
+    // Shift+End then Delete
     dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
     dispatchKey('Delete', { code: 'Delete', keyCode: 46 });
 }
