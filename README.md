@@ -37,7 +37,7 @@
 Combine these with motions for powerful editing.
 - **Examples**: `dw` (delete word), `cc` (change line).
 - **Text Objects**: Supports `iw` (inner word), e.g., `ciw`.
-- **Yanking/Copying**: Pressing `y` immediately shows a guidance toast prompting you to use **`Ctrl+C`**. The extension does **not** handle yanking or automated selection to ensure a clear boundary between extension logic and native system shortcuts.
+- **Yanking/Copying / Searching**: Commands related to the clipboard or searching (`y`, `p`, `/`, `?`, `n`, `N`) act as short-circuits. They immediately abort any ongoing operator and display a guidance toast prompting you to use the corresponding native shortcut (e.g. **`Ctrl+C` / `Ctrl+V`**, **`Ctrl+F` / `Ctrl+G`**). The extension does **not** handle yanking or automated selection to ensure a clear boundary between extension logic and native system shortcuts.
 
 
 
@@ -50,7 +50,7 @@ Due to the unique architecture of Google Docs (Canvas-based rendering) and brows
 | Feature | Limitation | Extension Strategy |
 | :--- | :--- | :--- |
 | **Clipboard** (`y`, `p`) | Programmatic access blocked by Chrome. | Shows toast: **"USE CTRL+C / CTRL+V"**. |
-| **Search** (`/`, `?`, `n`) | Docs find-bar is in a separate iframe. | Shows toast: **"USE CTRL+F / CTRL+G"**. |
+| **Search** (`/`, `?`, `n`, `N`) | Docs find-bar is in a separate iframe. Focus on standard input fields (like the search bar) suppresses Vim bindings to allow typing. | Shows toast: **"USE CTRL+F / CTRL+G"**. |
 | **Text Objects** | Cannot read "content" to find brackets/quotes. | **`iw` (inner word)** is supported. |
 | **Macros** | Blocked by `isTrusted` security constraints. | Feature removed for stability. |
 

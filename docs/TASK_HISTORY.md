@@ -42,8 +42,7 @@ This file acts as a chronological changelog of major milestones and decisions. F
 - **Strict Yank Logic**: Pressing `y` in any mode now immediately displays a guidance toast. Waiting for motions or performing automated "bootstrapped" selections has been removed.
 - **Documentation Alignment**: Re-scrubbed all documentation to remove yanking examples and reinforce the boundary between extension logic and native system shortcuts.
 
-## v1.1.4 (Real-Time Synergy)
-- **Auto-Save Refactor**: Eliminated the manual "Save" button in settings. All settings (toggle, keys, size) now persist instantly on interaction.
-- **Visual Feedback**: Added a "SAVED" indicator in the options dashboard.
-- **Messaging System**: Implemented `chrome.tabs.sendMessage` for live status line size previews, allowing users to see size changes in Docs before releasing the slider.
-- **Documentation Overhaul**: Comprehensive update of `README.md` and `docs/` to provide a full command matrix, limitation solutions, and architectural details.
+## v1.2.0 (Production Release & Onboarding)
+- **Production Packaged**: Generated extension icons (16, 48, 128) and added them to `manifest.json`.
+- **Onboarding Website**: Created a static onboarding site (`website/`) adhering to the Neon-Dark design system to showcase features and limitations to new users.
+- **Final Validation**: Codebase and documentation audited and verified functionally complete for initial release.

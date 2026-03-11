@@ -17,7 +17,7 @@ const MODES = {
 
 let currentMode = MODES.NORMAL;
 let commandSequence = ''; // Buffer for multi-key commands like 'dd'
-let pendingOperator = null; // 'c', 'd', 'y'
+let pendingOperator = null; // 'c', 'd'
 let isEnabled = true;
 let keybindings = {
     left: 'h',
@@ -145,6 +145,30 @@ function setMode(mode) {
 }
 
 function handleOperatorSequence(key) {
+    // Delegated commands short-circuit even during pending operators
+    switch (key) {
+        case 'y':
+        case 'Y':
+            showTemporaryMessage('USE CTRL+C TO COPY');
+            setMode(MODES.NORMAL);
+            return;
+        case 'p':
+        case 'P':
+            showTemporaryMessage('USE CTRL+V TO PASTE');
+            setMode(MODES.NORMAL);
+            return;
+        case '/':
+        case '?':
+            showTemporaryMessage('USE CTRL+F TO SEARCH');
+            setMode(MODES.NORMAL);
+            return;
+        case 'n':
+        case 'N':
+            showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
+            setMode(MODES.NORMAL);
+            return;
+    }
+
     commandSequence += key;
     updateModeIndicator();
 
@@ -264,36 +288,26 @@ function handleNormalModeEvent(e) {
         return;
     }
 
-    // Yank (Short-circuit)
-    if (key === 'y') {
-        showTemporaryMessage('USE CTRL+C TO COPY');
-        return;
-    }
-
-    // 'gg' — document start
-    if (key === 'g') {
-        commandSequence += 'g';
-        updateModeIndicator();
-        if (commandSequence === 'gg') {
-            window.emulator.moveDocumentStart();
-            commandSequence = '';
-            updateModeIndicator();
-        }
-        return;
-    }
-
-    // --- Search (Delegated to Native Docs) ---
-    if (key === '/' || key === '?') {
-        showTemporaryMessage('USE CTRL+F TO SEARCH');
-        return;
-    }
-    if (key === 'n' || key === 'N') {
-        showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
-        return;
-    }
-
     // Single-key commands
     switch (key) {
+        // Delegated to system
+        case 'y':
+        case 'Y':
+            showTemporaryMessage('USE CTRL+C TO COPY');
+            break;
+        case 'p':
+        case 'P':
+            showTemporaryMessage('USE CTRL+V TO PASTE');
+            break;
+        case '/':
+        case '?':
+            showTemporaryMessage('USE CTRL+F TO SEARCH');
+            break;
+        case 'n':
+        case 'N':
+            showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
+            break;
+
         // Mode switches
         case 'i': setMode(MODES.INSERT); break;
         case 'I': window.emulator.moveHome(); setMode(MODES.INSERT); break;
@@ -315,8 +329,6 @@ function handleNormalModeEvent(e) {
         case 'x': window.emulator.deleteChar(); break;
         case 'D': window.emulator.deleteToLineEnd(); break;
         case 'C': window.emulator.deleteToLineEnd(); setMode(MODES.INSERT); break;
-        case 'p':
-        case 'P': showTemporaryMessage('USE CTRL+V TO PASTE'); break;
 
         // Basic movement
         case keybindings.left: window.emulator.moveLeft(); break;
@@ -345,6 +357,17 @@ function handleNormalModeEvent(e) {
 
         // Undo
         case 'u': window.emulator.undo(); break;
+
+        // Document start
+        case 'g':
+            commandSequence += 'g';
+            updateModeIndicator();
+            if (commandSequence === 'gg') {
+                window.emulator.moveDocumentStart();
+                commandSequence = '';
+                updateModeIndicator();
+            }
+            break;
 
         default:
             if (isEscapeKey(key)) {
@@ -397,31 +420,24 @@ function handleVisualModeEvent(e) {
 
     if (key === 'c' || key === 's') { window.emulator.deleteSelected(); setMode(MODES.INSERT); return; }
     if (key === 'd' || key === 'x') { window.emulator.deleteSelected(); setMode(MODES.NORMAL); return; }
-    if (key === 'y') { showTemporaryMessage('USE CTRL+C TO COPY'); return; }
-    if (key === 'p' || key === 'P') { showTemporaryMessage('USE CTRL+V TO PASTE'); return; }
-
-    // --- Search (Delegated) ---
-    if (key === '/' || key === '?') {
-        showTemporaryMessage('USE CTRL+F TO SEARCH');
-        return;
-    }
-    if (key === 'n' || key === 'N') {
-        showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
-        return;
-    }
-
-    if (key === 'g') {
-        commandSequence += 'g';
-        updateModeIndicator();
-        if (commandSequence === 'gg') {
-            window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, ctrlKey: true, shiftKey: true });
-            commandSequence = '';
-            updateModeIndicator();
-        }
-        return;
-    }
-
     switch (key) {
+        case 'y':
+        case 'Y':
+            showTemporaryMessage('USE CTRL+C TO COPY');
+            break;
+        case 'p':
+        case 'P':
+            showTemporaryMessage('USE CTRL+V TO PASTE');
+            break;
+        case '/':
+        case '?':
+            showTemporaryMessage('USE CTRL+F TO SEARCH');
+            break;
+        case 'n':
+        case 'N':
+            showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
+            break;
+
         case keybindings.left: window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, shiftKey: true }); break;
         case keybindings.down: window.emulator.dispatchKey('ArrowDown', { code: 'ArrowDown', keyCode: 40, shiftKey: true }); break;
         case keybindings.up: window.emulator.dispatchKey('ArrowUp', { code: 'ArrowUp', keyCode: 38, shiftKey: true }); break;
@@ -438,6 +454,18 @@ function handleVisualModeEvent(e) {
         case 'G': window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, ctrlKey: true, shiftKey: true }); break;
         case '}': window.emulator.dispatchKey('PageDown', { code: 'PageDown', keyCode: 34, shiftKey: true }); break;
         case '{': window.emulator.dispatchKey('PageUp', { code: 'PageUp', keyCode: 33, shiftKey: true }); break;
+
+        // Document start
+        case 'g':
+            commandSequence += 'g';
+            updateModeIndicator();
+            if (commandSequence === 'gg') {
+                window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, ctrlKey: true, shiftKey: true });
+                commandSequence = '';
+                updateModeIndicator();
+            }
+            break;
+
         default: break;
     }
 }
@@ -449,6 +477,12 @@ function handleVisualModeEvent(e) {
 function onKeyDown(e) {
     if (!e.isTrusted) return;
     if (!isEnabled) return;
+
+    // Bypass Vim modes if the user is typing in a native input or textarea 
+    // (e.g., the Docs Ctrl+F search bar)
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        return;
+    }
 
     if (currentMode === MODES.NORMAL) handleNormalModeEvent(e);
     else if (currentMode === MODES.INSERT) handleInsertModeEvent(e);

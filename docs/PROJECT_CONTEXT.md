@@ -13,7 +13,7 @@
   - Document: `gg`, `G`
   - Paragraph/Page: `{`, `}`
 - **Operators**: Supporting `d` (delete) and `c` (change) with motions.
-  - **Yank**: Pressing `y` is a short-circuit command that only displays a guidance toast.
+  - **Yank / Search**: Keys like `y`, `p`, `/`, `?`, `n`, `N` are short-circuit commands that only display a guidance toast, even aborting active operators.
 
 
 - **Text Objects**: `iw` (inner word) correctly targets current word.
@@ -27,7 +27,7 @@
 
 2. **Search (`/`, `?`, `n`, `N`)**:
    - *Blocker*: Google Docs find/replace bar exists in a separate iframe, making programmatic interaction unreliable.
-   - *Solution*: Intercept search keys and guide users to **`Ctrl+F`** and **`Ctrl+G`**. These native shortcuts are explicitly whitelisted in the event listener.
+   - *Solution*: Intercept search keys and guide users to **`Ctrl+F`** and **`Ctrl+G`**. Additionally, if a user focuses a standard `INPUT` or `TEXTAREA` field, Vim bindings are bypassed entirely to allow natural typing (critical for the `Ctrl+F` search bar).
 
 3. **Text Context (`di"`, `ci(`)**:
    - *Blocker*: Canvas rendering prevents the content script from reading "text" to find delimiters like brackets or quotes.

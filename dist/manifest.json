@@ -3,14 +3,23 @@
   "name": "Vim for Google Docs",
   "description": "Customizable Vim keybindings for Google Docs.",
   "version": "1.0.0",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "permissions": [
     "storage",
     "activeTab"
   ],
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "js": [
-        "assets/content.js-GDqesACo.js"
+        "assets/content.js-CkSQge1F.js"
       ],
       "matches": [
         "https://docs.google.com/*"
@@ -33,7 +42,7 @@
         "https://docs.google.com/*"
       ],
       "resources": [
-        "assets/content.js-GDqesACo.js"
+        "assets/content.js-CkSQge1F.js"
       ],
       "use_dynamic_url": false
     }
