@@ -19,7 +19,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.js-CkSQge1F.js"
+        "assets/content.js-ffSgs39I.js"
       ],
       "matches": [
         "https://docs.google.com/*"
@@ -42,7 +42,7 @@
         "https://docs.google.com/*"
       ],
       "resources": [
-        "assets/content.js-CkSQge1F.js"
+        "assets/content.js-ffSgs39I.js"
       ],
       "use_dynamic_url": false
     }
