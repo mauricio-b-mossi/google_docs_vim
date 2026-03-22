@@ -4,7 +4,7 @@
  * Responsible for dispatching synthetic KeyboardEvents to the active element.
  */
 
-export function dispatchKey(key, options = {}) {
+function dispatchKey(key, options = {}) {
     let target = document.activeElement;
 
     // Try to dispatch directly inside the Docs iframe if it exists and we are in the top window
@@ -47,100 +47,118 @@ export function dispatchKey(key, options = {}) {
 
 // --- Specific Vim Command Mappings ---
 
-export function moveLeft() {
+function moveLeft() {
     dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37 });
 }
 
-export function moveDown() {
+function moveDown() {
     dispatchKey('ArrowDown', { code: 'ArrowDown', keyCode: 40 });
 }
 
-export function moveUp() {
+function moveUp() {
     dispatchKey('ArrowUp', { code: 'ArrowUp', keyCode: 38 });
 }
 
-export function moveRight() {
+function moveRight() {
     dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39 });
 }
 
-export function moveWordForward() {
+function moveWordForward() {
     // Docs uses Ctrl+Right for next word start
     dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true });
 }
 
-export function moveWordBackward() {
+function moveWordBackward() {
     // Docs uses Ctrl+Left for previous word start
     dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true });
 }
 
-export function moveWordEnd() {
+function moveWordEnd() {
     // Docs uses Ctrl+Right for next word, we can approximate 'e' with Ctrl+Right + Left
     dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true });
     dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37 });
 }
 
-export function movePageDown() {
+function movePageDown() {
     dispatchKey('PageDown', { code: 'PageDown', keyCode: 34 });
 }
 
-export function movePageUp() {
+function movePageUp() {
     dispatchKey('PageUp', { code: 'PageUp', keyCode: 33 });
 }
 
-export function moveDocumentStart() {
+function moveDocumentStart() {
     // Ctrl+Home
     dispatchKey('Home', { code: 'Home', keyCode: 36, ctrlKey: true });
 }
 
-export function moveDocumentEnd() {
+function moveDocumentEnd() {
     // Ctrl+End
     dispatchKey('End', { code: 'End', keyCode: 35, ctrlKey: true });
 }
 
-export function deleteChar() {
+function deleteChar() {
     // Simulates 'x' in Vim
     dispatchKey('Delete', { code: 'Delete', keyCode: 46 });
 }
 
-export function pressEnter() {
+function pressEnter() {
     dispatchKey('Enter', { code: 'Enter', keyCode: 13 });
 }
 
-export function moveHome() {
+function moveHome() {
     dispatchKey('Home', { code: 'Home', keyCode: 36 });
 }
 
-export function moveEnd() {
+function moveEnd() {
     dispatchKey('End', { code: 'End', keyCode: 35 });
 }
 
-export function deleteToLineEnd() {
+function deleteToLineEnd() {
     // Shift+End then Delete
     dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
     dispatchKey('Delete', { code: 'Delete', keyCode: 46 });
 }
 
-export function selectWord() {
+function selectWord() {
     // Basic inner word selection: Ctrl+Left then Ctrl+Shift+Right
     dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true });
     dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true });
 }
 
-export function deleteSelected() {
+function deleteSelected() {
     dispatchKey('Delete', { code: 'Delete', keyCode: 46 });
 }
 
-export function undo() {
+function undo() {
     dispatchKey('z', { code: 'KeyZ', keyCode: 90, ctrlKey: true });
 }
 
-export function redo() {
+function redo() {
     dispatchKey('y', { code: 'KeyY', keyCode: 89, ctrlKey: true });
 }
 
-export function selectLine() {
+function selectLine() {
     dispatchKey('Home', { code: 'Home', keyCode: 36 });
     dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
 }
 
+function selectLines(count) {
+    dispatchKey('Home', { code: 'Home', keyCode: 36 });
+    for (let i = 1; i < count; i++) {
+        dispatchKey('ArrowDown', { code: 'ArrowDown', keyCode: 40, shiftKey: true });
+    }
+    dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
+}
+
+function indent() {
+    dispatchKey('Tab', { code: 'Tab', keyCode: 9 });
+}
+
+function dedent() {
+    dispatchKey('Tab', { code: 'Tab', keyCode: 9, shiftKey: true });
+}
+
 // --- Document helpers ---
+
+window.emulator = { dispatchKey, moveLeft, moveDown, moveUp, moveRight, moveWordForward, moveWordBackward, moveWordEnd, movePageDown, movePageUp, moveDocumentStart, moveDocumentEnd, deleteChar, pressEnter, moveHome, moveEnd, deleteToLineEnd, selectWord, deleteSelected, undo, redo, selectLine, selectLines, indent, dedent };

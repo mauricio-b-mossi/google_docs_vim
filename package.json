@@ -2,17 +2,8 @@
   "name": "google-doc-vim",
   "version": "1.0.0",
   "description": "Vim extension for Google Docs",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
+  "scripts": {},
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.23",
-    "vite": "^5.2.0"
-  }
+  "license": "ISC"
 }

@@ -3,8 +3,6 @@
  *
  * Injects into Google Docs to provide Vim keybindings.
  */
-import * as emulator from './emulator.js';
-window.emulator = emulator;
 
 // --- STATE ---
 const isTopWindow = window === window.top;
@@ -12,13 +10,16 @@ const isTopWindow = window === window.top;
 const MODES = {
     NORMAL: 'NORMAL',
     INSERT: 'INSERT',
-    VISUAL: 'VISUAL'
+    VISUAL: 'VISUAL',
+    COMMAND: 'COMMAND'
 };
 
 let currentMode = MODES.NORMAL;
 let commandSequence = ''; // Buffer for multi-key commands like 'dd'
 let pendingOperator = null; // 'c', 'd'
 let isEnabled = true;
+let multiplierString = '';
+let pendingReplaceChar = false;
 let keybindings = {
     left: 'h',
     down: 'j',
@@ -27,6 +28,9 @@ let keybindings = {
 };
 let customEscape = 'Escape'; // Additional key that acts as Escape (Escape is always reserved)
 let statusLineSize = 12; // Default font size for the status line in pixels
+
+let escapeSequenceBuffer = [];
+let escapeSequenceTimer = null;
 
 // Search is delegated to native Google Docs Ctrl+F / Ctrl+G
 
@@ -72,6 +76,9 @@ function createModeIndicator() {
         if (e.data && e.data.type === 'VIM_DOCS_MSG') {
             showTemporaryMessage(e.data.msg);
         }
+        if (e.data && e.data.type === 'VIM_DOCS_TOGGLE_HELP') {
+            toggleHelpOverlay(e.data.show);
+        }
     });
 }
 
@@ -94,14 +101,20 @@ function updateModeIndicator() {
 
     let text = `-- ${currentMode} --`;
 
-    if (currentMode === MODES.NORMAL && commandSequence) {
-        text += ` ${commandSequence}`;
+    if (currentMode === MODES.NORMAL) {
+        let cmdText = `${multiplierString}${commandSequence}${pendingReplaceChar ? 'r' : ''}`;
+        if (cmdText) {
+            text += ` ${cmdText}`;
+        }
     }
 
     if (currentMode === MODES.INSERT) {
         modeIndicator.style.backgroundColor = '#2ecc71';
     } else if (currentMode === MODES.VISUAL) {
         modeIndicator.style.backgroundColor = '#e67e22';
+    } else if (currentMode === MODES.COMMAND) {
+        modeIndicator.style.backgroundColor = '#8e44ad';
+        text = commandSequence;
     } else {
         modeIndicator.style.backgroundColor = '#333';
     }
@@ -126,20 +139,136 @@ function showTemporaryMessage(msg) {
     }, 2000);
 }
 
+let helpOverlay = null;
+
+function toggleHelpOverlay(show) {
+    if (!isTopWindow) {
+        window.parent.postMessage({ type: 'VIM_DOCS_TOGGLE_HELP', show }, '*');
+        return;
+    }
+    
+    if (show) {
+        if (helpOverlay) return;
+        helpOverlay = document.createElement('div');
+        helpOverlay.id = 'vim-docs-help-overlay';
+        helpOverlay.style.position = 'fixed';
+        helpOverlay.style.top = '50%';
+        helpOverlay.style.left = '50%';
+        helpOverlay.style.transform = 'translate(-50%, -50%)';
+        helpOverlay.style.backgroundColor = '#222';
+        helpOverlay.style.color = '#eee';
+        helpOverlay.style.padding = '30px 40px';
+        helpOverlay.style.borderRadius = '12px';
+        helpOverlay.style.fontFamily = 'monospace';
+        helpOverlay.style.fontSize = '15px';
+        helpOverlay.style.zIndex = '9999999';
+        helpOverlay.style.boxShadow = '0 10px 40px rgba(0,0,0,0.6)';
+        helpOverlay.style.maxHeight = '85vh';
+        helpOverlay.style.width = '600px';
+        helpOverlay.style.maxWidth = '90vw';
+        helpOverlay.style.overflowY = 'auto';
+        helpOverlay.style.border = '1px solid #444';
+        
+        helpOverlay.innerHTML = `
+            <style>
+                #vim-docs-help-overlay table { width: 100%; text-align: left; border-collapse: collapse; margin-top: 15px; }
+                #vim-docs-help-overlay th { border-bottom: 1px solid #555; padding: 12px 10px 12px 0; color: #aaa; width: 35%; }
+                #vim-docs-help-overlay th:last-child { width: 65%; padding-right: 0;}
+                #vim-docs-help-overlay td { padding: 12px 10px 12px 0; border-bottom: 1px solid #333; }
+                #vim-docs-help-overlay td:last-child { padding-right: 0; }
+                #vim-docs-help-overlay tr:last-child td { border-bottom: none; }
+                #vim-docs-help-overlay kbd { background: #444; padding: 2px 6px; border-radius: 4px; color: #fff; }
+            </style>
+            <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px; font-size: 20px;">VimDocs Command Reference</h2>
+            <table>
+                <thead>
+                    <tr><th>Key</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong style="color: #2ecc71;">i, I, a, A, o, O</strong></td><td>Enter Insert Mode</td></tr>
+                    <tr><td><strong style="color: #e67e22;">v, V</strong></td><td>Enter Visual Mode</td></tr>
+                    <tr><td><strong>h, j, k, l</strong></td><td>Basic movements</td></tr>
+                    <tr><td><strong>w, b, e</strong></td><td>Word movements</td></tr>
+                    <tr><td><strong>0, ^, $</strong></td><td>Line movements</td></tr>
+                    <tr><td><strong>gg, G</strong></td><td>Document movements</td></tr>
+                    <tr><td><strong>{, }</strong></td><td>Paragraph/Page movements</td></tr>
+                    <tr><td><strong>c, d, x, s</strong></td><td>Delete / Change</td></tr>
+                    <tr><td><strong>u, Ctrl+r</strong></td><td>Undo / Redo</td></tr>
+                    <tr><td><strong>:help</strong></td><td>Show this help overlay</td></tr>
+                    <tr><td><strong>:q / Esc</strong></td><td>Close help overlay</td></tr>
+                </tbody>
+            </table>
+            <p style="margin-bottom: 0; margin-top: 20px; font-size: 12px; color: #888; text-align: right;">Press <kbd>Esc</kbd> or type <kbd>:q</kbd> to close.</p>
+        `;
+        document.body.appendChild(helpOverlay);
+    } else {
+        if (helpOverlay) {
+            helpOverlay.remove();
+            helpOverlay = null;
+        }
+    }
+}
+
 // --- ENGINE ---
 
 /**
  * Returns true if the given key should act as an Escape.
- * Native Escape is always included; customEscape adds an additional alias.
+ * Native Escape is always included; customEscape adds an additional alias as long as it's a single key.
  */
 function isEscapeKey(key) {
-    return key === 'Escape' || key === 'Esc' || key === customEscape;
+    if (key === 'Escape' || key === 'Esc') return true;
+    if (customEscape && customEscape.length === 1 && key === customEscape) return true;
+    return false;
+}
+
+/**
+ * Checks for multi-key (composed) escape sequences (e.g. 'jj').
+ * Returns true if a full match is found.
+ */
+function handleComposedEscape(key) {
+    if (!customEscape || customEscape.length <= 1) return false;
+
+    escapeSequenceBuffer.push(key);
+    const currentSequence = escapeSequenceBuffer.join('');
+
+    if (escapeSequenceTimer) {
+        clearTimeout(escapeSequenceTimer);
+    }
+
+    if (customEscape === currentSequence) {
+        escapeSequenceBuffer = [];
+        return true;
+    }
+
+    if (customEscape.startsWith(currentSequence)) {
+        // Partial match, keep waiting
+        escapeSequenceTimer = setTimeout(() => {
+            escapeSequenceBuffer = [];
+        }, 500);
+        return false;
+    }
+
+    // No match
+    escapeSequenceBuffer = [];
+    return false;
 }
 
 function setMode(mode) {
     currentMode = mode;
     commandSequence = '';
     pendingOperator = null;
+    multiplierString = '';
+    pendingReplaceChar = false;
+    escapeSequenceBuffer = []; // Reset on mode switch
+    updateModeIndicator();
+}
+
+function executeAction(fn) {
+    const count = parseInt(multiplierString, 10) || 1;
+    for (let i = 0; i < count; i++) {
+        fn();
+    }
+    multiplierString = '';
     updateModeIndicator();
 }
 
@@ -172,15 +301,21 @@ function handleOperatorSequence(key) {
     updateModeIndicator();
 
     let motionMatched = true;
+    const count = parseInt(multiplierString, 10) || 1;
 
     switch (key) {
         case 'w':
         case 'e':
-            window.emulator.selectWord();
+            window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true });
+            for(let i=0; i<count; i++) {
+                window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true });
+            }
             break;
         case 'b':
-            window.emulator.moveWordBackward();
-            window.emulator.selectWord();
+            window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true });
+            for(let i=0; i<count; i++) {
+                window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true, shiftKey: true });
+            }
             break;
         case '$':
             window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true });
@@ -217,7 +352,8 @@ function handleOperatorSequence(key) {
 
     // Double operator (dd, cc)
     if (key === pendingOperator) {
-        window.emulator.selectLine();
+        const count = parseInt(multiplierString, 10) || 1;
+        window.emulator.selectLines(count);
         window.emulator.deleteSelected();
         if (pendingOperator === 'c') setMode(MODES.INSERT);
         else setMode(MODES.NORMAL);
@@ -247,6 +383,51 @@ function handleOperatorSequence(key) {
 
 
 // ============================================================
+// COMMAND MODE
+// ============================================================
+
+function handleCommandModeEvent(e) {
+    if (!isEnabled) return;
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isEscapeKey(e.key)) {
+        setMode(MODES.NORMAL);
+        return;
+    }
+
+    if (e.key === 'Enter') {
+        const cmd = commandSequence.substring(1).trim();
+        if (cmd === 'help') {
+            toggleHelpOverlay(true);
+        } else if (cmd === 'q' || cmd === 'wq') {
+            toggleHelpOverlay(false);
+        } else if (cmd !== '') {
+            showTemporaryMessage('UNKNOWN COMMAND: ' + cmd);
+        }
+        setMode(MODES.NORMAL);
+        return;
+    }
+
+    if (e.key === 'Backspace') {
+        if (commandSequence.length <= 1) {
+            setMode(MODES.NORMAL);
+        } else {
+            commandSequence = commandSequence.slice(0, -1);
+            updateModeIndicator();
+        }
+        return;
+    }
+
+    if (e.key.length === 1) {
+        commandSequence += e.key;
+        updateModeIndicator();
+    }
+}
+
+// ============================================================
 // NORMAL MODE
 // ============================================================
 
@@ -271,6 +452,25 @@ function handleNormalModeEvent(e) {
     }
 
     const key = e.key;
+
+    // Handle replace char
+    if (pendingReplaceChar) {
+        window.emulator.deleteChar();
+        window.emulator.dispatchKey(key);
+        pendingReplaceChar = false;
+        multiplierString = '';
+        updateModeIndicator();
+        return;
+    }
+
+    // Number multiplier
+    if (/^[0-9]$/.test(key)) {
+        if (multiplierString.length > 0 || key !== '0') {
+            multiplierString += key;
+            updateModeIndicator();
+            return;
+        }
+    }
 
     // Handle pending operators (c, d)
     if (pendingOperator) {
@@ -324,34 +524,72 @@ function handleNormalModeEvent(e) {
             break;
 
         // Editing
-        case 'x': window.emulator.deleteChar(); break;
-        case 'D': window.emulator.deleteToLineEnd(); break;
-        case 'C': window.emulator.deleteToLineEnd(); setMode(MODES.INSERT); break;
+        case 'x': executeAction(() => window.emulator.deleteChar()); break;
+        case 's': executeAction(() => window.emulator.deleteChar()); setMode(MODES.INSERT); break;
+        case 'S':
+            const countS = parseInt(multiplierString, 10) || 1;
+            window.emulator.selectLines(countS);
+            window.emulator.deleteSelected();
+            setMode(MODES.INSERT);
+            break;
+        case 'r':
+            pendingReplaceChar = true;
+            updateModeIndicator();
+            break;
+        case 'J':
+            executeAction(() => {
+                window.emulator.moveEnd();
+                window.emulator.deleteChar();
+                window.emulator.dispatchKey(' ', { code: 'Space', keyCode: 32 });
+            });
+            break;
+        case '>':
+            if (commandSequence === '>') {
+                executeAction(() => window.emulator.indent());
+                commandSequence = '';
+            } else {
+                commandSequence = '>';
+                updateModeIndicator();
+            }
+            break;
+        case '<':
+            if (commandSequence === '<') {
+                executeAction(() => window.emulator.dedent());
+                commandSequence = '';
+            } else {
+                commandSequence = '<';
+                updateModeIndicator();
+            }
+            break;
+        case 'D': executeAction(() => window.emulator.deleteToLineEnd()); break;
+        case 'C': executeAction(() => window.emulator.deleteToLineEnd()); setMode(MODES.INSERT); break;
 
         // Basic movement
-        case keybindings.left: window.emulator.moveLeft(); break;
-        case keybindings.down: window.emulator.moveDown(); break;
-        case keybindings.up: window.emulator.moveUp(); break;
-        case keybindings.right: window.emulator.moveRight(); break;
+        case keybindings.left: executeAction(() => window.emulator.moveLeft()); break;
+        case keybindings.down: executeAction(() => window.emulator.moveDown()); break;
+        case keybindings.up: executeAction(() => window.emulator.moveUp()); break;
+        case keybindings.right: executeAction(() => window.emulator.moveRight()); break;
 
         // Visual mode
         case 'v': setMode(MODES.VISUAL); break;
         case 'V': window.emulator.selectLine(); setMode(MODES.VISUAL); break;
 
         // Word motions
-        case 'w': window.emulator.moveWordForward(); break;
-        case 'e': window.emulator.moveWordEnd(); break;
-        case 'b': window.emulator.moveWordBackward(); break;
+        case 'w': executeAction(() => window.emulator.moveWordForward()); break;
+        case 'e': executeAction(() => window.emulator.moveWordEnd()); break;
+        case 'b': executeAction(() => window.emulator.moveWordBackward()); break;
 
         // Line motions
         case '0':
-        case '^': window.emulator.moveHome(); break;
-        case '$': window.emulator.moveEnd(); break;
+            executeAction(() => window.emulator.moveHome());
+            break;
+        case '^': executeAction(() => window.emulator.moveHome()); break;
+        case '$': executeAction(() => window.emulator.moveEnd()); break;
 
         // Document / page motions
         case 'G': window.emulator.moveDocumentEnd(); break;
-        case '}': window.emulator.movePageDown(); break;
-        case '{': window.emulator.movePageUp(); break;
+        case '}': executeAction(() => window.emulator.movePageDown()); break;
+        case '{': executeAction(() => window.emulator.movePageUp()); break;
 
         // Undo
         case 'u': window.emulator.undo(); break;
@@ -367,8 +605,15 @@ function handleNormalModeEvent(e) {
             }
             break;
 
+        case ':':
+            setMode(MODES.COMMAND);
+            commandSequence = ':';
+            updateModeIndicator();
+            break;
+
         default:
             if (isEscapeKey(key)) {
+                toggleHelpOverlay(false);
                 setMode(MODES.NORMAL);
                 break;
             }
@@ -382,10 +627,28 @@ function handleNormalModeEvent(e) {
 
 function handleInsertModeEvent(e) {
     if (!isEnabled) return;
+    
+    // Ignore modifier keys by themselves from triggering composed escapes
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+
     if (isEscapeKey(e.key) || (e.key === '[' && e.ctrlKey)) {
         e.preventDefault();
         e.stopPropagation();
         setMode(MODES.NORMAL);
+        return;
+    }
+
+    if (customEscape && customEscape.length > 1) {
+        if (handleComposedEscape(e.key)) {
+            e.preventDefault();
+            e.stopPropagation();
+            setMode(MODES.NORMAL);
+            
+            // Delete the characters that were already typed (length - 1 because we prevented the last one)
+            for (let i = 0; i < customEscape.length - 1; i++) {
+                window.emulator.dispatchKey('Backspace', { code: 'Backspace', keyCode: 8 });
+            }
+        }
     }
 }
 
@@ -414,8 +677,28 @@ function handleVisualModeEvent(e) {
         return;
     }
 
+    if (customEscape && customEscape.length > 1) {
+        if (handleComposedEscape(key)) {
+            window.emulator.moveRight();
+            window.emulator.moveLeft();
+            setMode(MODES.NORMAL);
+            return;
+        }
+    }
+
+    // Number multiplier
+    if (/^[0-9]$/.test(key)) {
+        if (multiplierString.length > 0 || key !== '0') {
+            multiplierString += key;
+            updateModeIndicator();
+            return;
+        }
+    }
+
     if (key === 'c' || key === 's') { window.emulator.deleteSelected(); setMode(MODES.INSERT); return; }
     if (key === 'd' || key === 'x') { window.emulator.deleteSelected(); setMode(MODES.NORMAL); return; }
+    if (key === '>') { executeAction(() => window.emulator.indent()); return; }
+    if (key === '<') { executeAction(() => window.emulator.dedent()); return; }
     switch (key) {
         case 'y':
         case 'Y':
@@ -434,22 +717,26 @@ function handleVisualModeEvent(e) {
             showTemporaryMessage('USE CTRL+G FOR NEXT RESULT');
             break;
 
-        case keybindings.left: window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, shiftKey: true }); break;
-        case keybindings.down: window.emulator.dispatchKey('ArrowDown', { code: 'ArrowDown', keyCode: 40, shiftKey: true }); break;
-        case keybindings.up: window.emulator.dispatchKey('ArrowUp', { code: 'ArrowUp', keyCode: 38, shiftKey: true }); break;
-        case keybindings.right: window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, shiftKey: true }); break;
-        case 'w': window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true }); break;
+        case keybindings.left: executeAction(() => window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, shiftKey: true })); break;
+        case keybindings.down: executeAction(() => window.emulator.dispatchKey('ArrowDown', { code: 'ArrowDown', keyCode: 40, shiftKey: true })); break;
+        case keybindings.up: executeAction(() => window.emulator.dispatchKey('ArrowUp', { code: 'ArrowUp', keyCode: 38, shiftKey: true })); break;
+        case keybindings.right: executeAction(() => window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, shiftKey: true })); break;
+        case 'w': executeAction(() => window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true })); break;
         case 'e':
-            window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true });
-            window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, shiftKey: true });
+            executeAction(() => {
+                window.emulator.dispatchKey('ArrowRight', { code: 'ArrowRight', keyCode: 39, ctrlKey: true, shiftKey: true });
+                window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, shiftKey: true });
+            });
             break;
-        case 'b': window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true, shiftKey: true }); break;
+        case 'b': executeAction(() => window.emulator.dispatchKey('ArrowLeft', { code: 'ArrowLeft', keyCode: 37, ctrlKey: true, shiftKey: true })); break;
         case '0':
-        case '^': window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, shiftKey: true }); break;
-        case '$': window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true }); break;
+            executeAction(() => window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, shiftKey: true }));
+            break;
+        case '^': executeAction(() => window.emulator.dispatchKey('Home', { code: 'Home', keyCode: 36, shiftKey: true })); break;
+        case '$': executeAction(() => window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, shiftKey: true })); break;
         case 'G': window.emulator.dispatchKey('End', { code: 'End', keyCode: 35, ctrlKey: true, shiftKey: true }); break;
-        case '}': window.emulator.dispatchKey('PageDown', { code: 'PageDown', keyCode: 34, shiftKey: true }); break;
-        case '{': window.emulator.dispatchKey('PageUp', { code: 'PageUp', keyCode: 33, shiftKey: true }); break;
+        case '}': executeAction(() => window.emulator.dispatchKey('PageDown', { code: 'PageDown', keyCode: 34, shiftKey: true })); break;
+        case '{': executeAction(() => window.emulator.dispatchKey('PageUp', { code: 'PageUp', keyCode: 33, shiftKey: true })); break;
 
         // Document start
         case 'g':
@@ -483,6 +770,7 @@ function onKeyDown(e) {
     if (currentMode === MODES.NORMAL) handleNormalModeEvent(e);
     else if (currentMode === MODES.INSERT) handleInsertModeEvent(e);
     else if (currentMode === MODES.VISUAL) handleVisualModeEvent(e);
+    else if (currentMode === MODES.COMMAND) handleCommandModeEvent(e);
 }
 
 // ============================================================

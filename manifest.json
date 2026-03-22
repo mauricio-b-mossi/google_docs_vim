@@ -18,6 +18,7 @@
     "content_scripts": [
         {
             "js": [
+                "src/emulator.js",
                 "src/content.js"
             ],
             "matches": [

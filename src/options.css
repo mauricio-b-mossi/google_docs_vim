@@ -296,3 +296,31 @@ input:checked+.slider:before {
 .size-slider::-webkit-slider-thumb:active {
   transform: scale(0.9);
 }
+
+/* Reference Button Styling */
+.ref-btn {
+  background: var(--neon-green);
+  color: black;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 10px var(--neon-green-glow);
+  cursor: pointer;
+  display: inline-block;
+}
+
+.ref-btn:hover {
+  background: var(--neon-green-hover);
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--neon-green-glow);
+}
+
+.ref-btn:active {
+  transform: scale(0.95);
+}

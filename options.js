@@ -15,6 +15,9 @@ const reservedKeys = ['i', 'v', 'V', 'x', 'd', 'c', 'y', 'p', 'u', 'G', 'g', '0'
 let listeningButton = null;
 let isListeningForEscape = false; // true when the customEscape button is active
 
+let captureBuffer = [];
+let captureTimeout = null;
+
 function formatKey(key) {
     if (!key) return '';
     if (key.startsWith('Arrow')) return key.replace('Arrow', '');
@@ -38,6 +41,10 @@ function handleKeybindingClick(e) {
 
 function cancelListening() {
     if (!listeningButton) return;
+    
+    if (captureTimeout) clearTimeout(captureTimeout);
+    captureBuffer = [];
+    
     listeningButton.innerText = listeningButton.dataset.prevText;
     listeningButton.classList.remove('listening');
     listeningButton = null;
@@ -66,26 +73,48 @@ function captureKey(e) {
         return;
     }
 
-    // Prevent setting the custom escape to the same key as a navigation binding
-    if (isListeningForEscape && key !== 'Escape') {
-        const navKeys = ['left', 'down', 'up', 'right'].map(dir => document.getElementById(dir).dataset.key);
-        if (navKeys.includes(key)) {
-            alert(`Key "${formatKey(key)}" is already used for a navigation binding.`);
-            cancelListening();
-            return;
-        }
+    if (isListeningForEscape) {
+        captureBuffer.push(key);
+        listeningButton.innerText = captureBuffer.map(formatKey).join('');
+        
+        if (captureTimeout) clearTimeout(captureTimeout);
+        
+        captureTimeout = setTimeout(() => {
+            const sequence = captureBuffer.join('');
+            
+            // Prevent setting the custom escape to the exact same key as a navigation binding
+            if (sequence !== 'Escape') {
+                const navKeys = ['left', 'down', 'up', 'right'].map(dir => document.getElementById(dir).dataset.key);
+                if (navKeys.includes(sequence)) {
+                    alert(`Sequence "${sequence}" is exactly the same as a navigation binding.`);
+                    cancelListening();
+                    return;
+                }
+            }
+
+            listeningButton.dataset.key = sequence;
+            listeningButton.classList.remove('listening');
+            isListeningForEscape = false;
+            captureBuffer = [];
+
+            document.removeEventListener('keydown', captureKey, { capture: true });
+            listeningButton = null;
+
+            // Auto-save on key capture
+            saveOptions();
+        }, 500);
+    } else {
+        listeningButton.dataset.key = key;
+        listeningButton.innerText = formatKey(key);
+        listeningButton.classList.remove('listening');
+        isListeningForEscape = false;
+
+        document.removeEventListener('keydown', captureKey, { capture: true });
+        listeningButton = null;
+
+        // Auto-save on key capture
+        saveOptions();
     }
-
-    listeningButton.dataset.key = key;
-    listeningButton.innerText = formatKey(key);
-    listeningButton.classList.remove('listening');
-    isListeningForEscape = false;
-
-    document.removeEventListener('keydown', captureKey, { capture: true });
-    listeningButton = null;
-
-    // Auto-save on key capture
-    saveOptions();
 }
 
 function notifySaved() {

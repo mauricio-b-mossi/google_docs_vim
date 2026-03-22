@@ -30,13 +30,18 @@
 | `i`, `I` | Enter Insert Mode (at cursor / at start of line) |
 | `a`, `A` | Enter Insert Mode (after cursor / at end of line) |
 | `o`, `O` | Open new line below / above and enter Insert Mode |
-| `x`, `D`, `C` | Delete character / delete to end / change to end |
+| `x`, `s` | Delete character / delete character and enter Insert mode |
+| `S`, `C` | Change line to end / change line completely |
+| `r<char>`| Replace a single character under cursor |
+| `J`      | Join current line with the line below |
+| `>>`, `<<`| Indent or dedent the current line |
 | `u`, `Ctrl+R` | Undo / Redo |
 
-### Operators (`d`, `c`, `y`)
-Combine these with motions for powerful editing.
-- **Examples**: `dw` (delete word), `cc` (change line).
+### Operators & Multipliers (`d`, `c`, `y`, `1-9`)
+Combine operators with motions for powerful editing, and prefix any command with a numerical multiplier to repeat it.
+- **Multipliers**: E.g., `3w` (move 3 words), `2dd` (delete 2 lines), `5j` (move down 5 lines).
 - **Text Objects**: Supports `iw` (inner word), e.g., `ciw`.
+- **Directional**: Full support for `d0`, `d^`, `c$` to delete/change to start or end of line.
 - **Yanking/Copying / Searching**: Commands related to the clipboard or searching (`y`, `p`, `/`, `?`, `n`, `N`) act as short-circuits. They immediately abort any ongoing operator and display a guidance toast prompting you to use the corresponding native shortcut (e.g. **`Ctrl+C` / `Ctrl+V`**, **`Ctrl+F` / `Ctrl+G`**). The extension does **not** handle yanking or automated selection to ensure a clear boundary between extension logic and native system shortcuts.
 
 
