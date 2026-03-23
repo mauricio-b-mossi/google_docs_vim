@@ -1,8 +1,10 @@
 {
   "name": "google-doc-vim",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Vim extension for Google Docs",
-  "scripts": {},
+  "scripts": {
+    "package": "rm -f vimdocs-extension.zip && python3 -c \"import os, zipfile; z = zipfile.ZipFile('vimdocs-extension.zip', 'w'); [z.write(os.path.join(r, f)) for d in ['HAVE_SRC', 'HAVE_ICONS'] for r, _, fs in os.walk(d.replace('HAVE_', '').lower()) for f in fs]; [z.write(f) for f in ['manifest.json', 'options.html', 'options.js'] if os.path.exists(f)]\""
+  },
   "keywords": [],
   "author": "",
   "license": "ISC"
