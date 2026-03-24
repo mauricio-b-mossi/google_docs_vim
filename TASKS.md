@@ -1,21 +1,6 @@
-# Reference Manual Implementation - Parallel Tasks
+# Reference Manual Implementation - Extension & Overlay
 
-This document outlines the independent tasks for implementing the Reference Manual feature across the website, extension options, and in-app overlay. The work has been divided to ensure that Agents A, B, and C can work entirely in parallel without encountering git conflicts or overlapping file logic.
-
----
-
-## 👨‍💻 Agent A: Website Documentation Creation
-**Goal**: Create a dedicated Command Reference page on the VimDocs website.
-**Files to Modify**: `website/reference.html`, `website/index.html` (optional), `website/styles.css` (optional)
-
-**Instructions for Agent A**:
-1. Create a new file `website/reference.html`.
-2. Extract the "Command Overview" and "Limitations / Transparency" content from `website/index.html` into this new page. Make sure the new page retains the project's Neon-Dark aesthetic.
-3. Provide a clear "Back to Home" button or link in `reference.html`.
-4. (Optional) In `website/index.html`, update links or add a button that points to the new `reference.html` page.
-5. The final hosted URL will be relative to the GitHub pages root, e.g., `https://mauricio-b-mossi.github.io/google_docs_vim/reference.html`.
-
----
+This document outlines the tasks for implementing the Reference Manual feature.
 
 ## 👨‍💻 Agent B: Extension Setting Menu Integration
 **Goal**: Add a quick access button in the extension's `options.html` page that navigates to the new website reference link.

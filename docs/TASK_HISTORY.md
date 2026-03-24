@@ -44,5 +44,4 @@ This file acts as a chronological changelog of major milestones and decisions. F
 
 ## v1.2.0 (Production Release & Onboarding)
 - **Production Packaged**: Generated extension icons (16, 48, 128) and added them to `manifest.json`.
-- **Onboarding Website**: Created a static onboarding site (`website/`) adhering to the Neon-Dark design system to showcase features and limitations to new users.
 - **Final Validation**: Codebase and documentation audited and verified functionally complete for initial release.
